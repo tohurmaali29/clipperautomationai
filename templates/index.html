@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/img/Klipzy-icon.png">
+    <title>Klipzy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="app-shell text-slate-100">
+    <div class="min-h-screen">
+        <div class="max-w-[1500px] mx-auto px-6 py-2">
+            <header class="studio-header">
+                <div class="studio-brand">
+                    <div class="studio-brand-top">
+                        <img src="/static/img/Klipzy-icon.png" alt="Klipzy logo" class="studio-brand-logo" />
+                        <h1 class="studio-brand-text text-2xl xl:text-3xl font-semibold text-white"><span class="studio-brand-accent">Klip</span>zy</h1>
+                    </div>
+                </div>
+                <button id="nav-toggle" type="button" class="studio-nav-toggle" aria-expanded="false" aria-controls="studio-nav-menu" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div id="nav-overlay" class="studio-nav-overlay"></div>
+                <div id="studio-nav-menu" class="studio-nav">
+                    <button id="nav-home" type="button">Home</button>
+                    <button id="nav-workspace" type="button">Workspace</button>
+                    <button id="nav-history" type="button">History</button>
+                </div>
+            </header>
+
+            <section id="home-section" class="studio-panel hero-panel mb-6 overflow-hidden rounded-[36px] p-8">
+                <div class="max-w-4xl hero-copy">
+                    <p class="hero-kicker text-sm uppercase tracking-[0.32em] text-sky-300/80">SHORTS MADE EASY</p>
+                    <h2 class="hero-title mt-6 max-w-4xl">
+                        from <span>any</span> <span>clip.</span>
+                    </h2>
+                    <p class="hero-description mt-6 max-w-xl text-base sm:text-lg">
+                        Paste a YouTube link, pick the best moment, and get a short with subtitles.
+                    </p>
+                </div>
+
+                <div class="hero-controls mt-10 rounded-[30px] p-5 sm:p-6">
+                    <!-- YouTube URL Input -->
+                    <div id="youtube-input" class="input-row">
+                        <div class="source-input-stack">
+                            <p class="mb-3 text-xs uppercase tracking-[0.3em] text-slate-500">Video Source</p>
+                            <div class="source-url-row">
+                                <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." class="studio-input w-full rounded-[22px] px-5 py-4" />
+                                <div class="source-action-group">
+                                    <div class="settings-pill is-static px-5 py-3 text-sm">Bahasa: Auto</div>
+                                    <button id="analyze-btn" type="button" class="analyze-button px-8 py-4 text-sm">Analyze</button>
+                                </div>
+                            </div>
+                            <div class="source-upload-row">
+                                <label class="local-file-wrap">
+                                    <span class="local-file-label">Upload Local File</span>
+                                    <input id="local-file" type="file" accept="video/*,audio/*" class="local-file-input" />
+                                </label>
+                                <button id="analyze-upload-btn" type="button" class="secondary-button px-6 py-3 text-sm">Analyze Local</button>
+                            </div>
+                            <p class="source-helper">YouTube link not working or no subtitles? Upload your local video here.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="processing-panel" class="studio-panel processing-panel mb-6 hidden rounded-[34px] p-6">
+                <div class="processing-header flex items-start gap-4">
+                    <div class="processing-ring mt-1"></div>
+                    <div class="flex-1">
+                        <p class="processing-title text-lg font-semibold text-white">Analyzing your video...</p>
+                        <p id="processing-message" class="processing-copy mt-1 text-sm text-slate-400">Getting transcript, extracting timing, and preparing AI insights.</p>
+                        <p id="processing-hint" class="processing-copy mt-2 hidden text-xs text-amber-200/90">This video is fairly long, so processing may take a few minutes.</p>
+                    </div>
+                    <span id="processing-progress-label" class="settings-pill is-static text-sm">10%</span>
+                </div>
+                <div class="processing-track mt-6 h-2 overflow-hidden rounded-full bg-slate-800">
+                    <div id="processing-bar" class="processing-bar h-full rounded-full"></div>
+                </div>
+            </section>
+
+            <main id="results-shell" class="results-shell hidden grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+                <article class="studio-panel workspace-panel rounded-[34px] p-6">
+                    <div class="panel-heading mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <p class="panel-label">Video Workspace</p>
+                        </div>
+                        <div class="workspace-actions flex flex-wrap gap-2 text-xs text-slate-400">
+                            <span>Set Start</span>
+                            <span>Set Clip End</span>
+                        </div>
+                    </div>
+                    <div class="workspace-player-shell relative overflow-hidden rounded-[28px] p-5">
+                        <div id="workspace-frame" class="workspace-player-frame aspect-[16/9] overflow-hidden rounded-[24px] shadow-inner shadow-slate-950/60">
+                            <div id="workspace-placeholder" class="flex h-full items-center justify-center">
+                                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                                    <svg width="35" height="35" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8 5V19L19 12L8 5Z" fill="white"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <iframe
+                                id="source-preview"
+                                class="hidden h-full w-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen
+                            ></iframe>
+                            <video id="clip-preview" class="hidden h-full w-full bg-slate-950" controls playsinline></video>
+                        </div>
+                        <div class="workspace-meta mt-6 flex items-center justify-between text-slate-400 text-sm">
+                            <span id="workspace-start-label">00:00</span>
+                            <span id="workspace-end-label">00:00</span>
+                        </div>
+                        <div class="workspace-progress-track mt-3 h-2 w-full rounded-full bg-slate-800">
+                            <div id="workspace-progress" class="workspace-progress-bar h-full w-0 rounded-full transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <section id="controls-section" class="workspace-trim-shell mt-6 hidden">
+                        <div class="export-card trim-embed-card rounded-[28px] p-5">
+                            <div class="trim-header-row">
+                                <div>
+                                    <p class="panel-label mb-2">Clip Trim Editor</p>
+                                    <p class="export-copy text-sm">Drag the yellow area to select the clip. Blue markers indicate heatmap peaks, while purple markers show AI recommendations.</p>
+                                </div>
+                            </div>
+                            <p id="heatmap-summary" class="export-copy mt-3 text-xs">Heatmap data is not used in this analysis.</p>
+                            <div class="trim-editor mt-4">
+                                <div class="trim-scale">
+                                    <span id="trim-scale-start">00:00</span>
+                                    <span id="trim-scale-end">00:00</span>
+                                </div>
+                                <div id="trim-marker-track" class="trim-marker-track trim-marker-track--compact">
+                                    <div id="trim-heatmap-layer" class="trim-heatmap-layer"></div>
+                                    <div id="trim-marker-layer" class="trim-marker-layer"></div>
+                                    <div id="trim-selection-bar" class="trim-selection-bar"></div>
+                                    <div id="trim-selection-start" class="trim-selection-handle"></div>
+                                    <div id="trim-selection-end" class="trim-selection-handle"></div>
+                                </div>
+                                <div class="trim-slider-grid trim-slider-grid--compact">
+                                    <label class="trim-slider-label">
+                                        <span>Start</span>
+                                        <input id="trim-start-input" type="range" min="0" max="0" value="0" step="1">
+                                    </label>
+                                    <label class="trim-slider-label">
+                                        <span>End</span>
+                                        <input id="trim-end-input" type="range" min="0" max="0" value="0" step="1">
+                                    </label>
+                                </div>
+                                <div class="trim-readout trim-readout--compact">
+                                    <div>
+                                        <p class="trim-readout-label">Trim Start</p>
+                                        <strong id="trim-start-readout">00:00</strong>
+                                    </div>
+                                    <div>
+                                        <p class="trim-readout-label">Trim End</p>
+                                        <strong id="trim-end-readout">00:00</strong>
+                                    </div>
+                                    <div>
+                                        <p class="trim-readout-label">Duration</p>
+                                        <strong id="trim-duration-readout">00:00</strong>
+                                    </div>
+                                </div>
+                                <button id="generate-manual-btn" type="button" class="generate-button generate-button--full mt-4 px-6 py-4 text-sm font-semibold">Generate From Manual Trim</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="export-section" class="workspace-trim-shell mt-6 hidden">
+                        <div class="export-card rounded-[28px] p-5 flex flex-col justify-between">
+                            <div>
+                                <p class="panel-label mb-4">Export Setting</p>
+                                <div class="settings-pill-group flex flex-wrap gap-2">
+                                    <button type="button" data-aspect="9:16" class="export-aspect-btn settings-pill is-active px-4 py-2 text-sm">9:16</button>
+                                    <button type="button" data-aspect="4:5" class="export-aspect-btn settings-pill px-4 py-2 text-sm">4:5</button>
+                                    <button type="button" data-aspect="1:1" class="export-aspect-btn settings-pill px-4 py-2 text-sm">1:1</button>
+                                    <button type="button" data-aspect="3:4" class="export-aspect-btn settings-pill px-4 py-2 text-sm">3:4</button>
+                                    <button type="button" data-aspect="16:9" class="export-aspect-btn settings-pill px-4 py-2 text-sm">16:9</button>
+                                </div>
+                                <div class="mt-5">
+                                    <p class="panel-label mb-3">Export Duration</p>
+                                    <div class="settings-pill-group flex flex-wrap gap-2">
+                                        <button type="button" data-duration="30" class="export-duration-btn settings-pill is-active px-4 py-2 text-sm">30s</button>
+                                        <button type="button" data-duration="45" class="export-duration-btn settings-pill px-4 py-2 text-sm">45s</button>
+                                        <button type="button" data-duration="60" class="export-duration-btn settings-pill px-4 py-2 text-sm">60s</button>
+                                        <button type="button" data-duration="custom" class="export-duration-btn settings-pill px-4 py-2 text-sm">Custom</button>
+                                    </div>
+                                    <div class="mt-3">
+                                        <input id="export-duration-input" type="number" min="5" max="600" value="30" class="studio-input hidden" placeholder="Custom duration in seconds" />
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="generate-clip-btn" type="button" class="generate-button mt-4 px-6 py-4 text-sm font-semibold">Generate Clip</button>
+                        </div>
+                    </section>
+                </article>
+
+                <aside class="studio-panel insights-panel rounded-[34px] p-6">
+                    <div class="panel-heading mb-6 flex items-center justify-between gap-3">
+                        <p class="panel-label">AI Insights</p>
+                        <div class="panel-chip inline-flex items-center rounded-full px-3 py-2 text-xs">Viral Picks</div>
+                    </div>
+                    <div id="recommendations" class="space-y-4">
+                        <!-- AI cards inserted here -->
+                    </div>
+                    <div class="mt-6">Select one or more clips to generate.
+                        <p class="export-copy text-sm"></p>
+                    </div>
+                </aside>
+            </main>
+
+            <section id="status-shell" class="studio-panel status-shell mt-6 rounded-[34px] p-6">
+                <div class="processing-header flex items-start gap-4">
+                    <div class="processing-ring mt-1"></div>
+                    <div class="flex-1">
+                        <p id="status-title" class="processing-title text-lg font-semibold text-white">Ready to analyze your video</p>
+                        <p id="status" class="processing-copy mt-1 text-sm text-slate-400">Ready to analyze your first clip.</p>
+                    </div>
+                    <span id="status-progress-label" class="settings-pill is-static text-sm hidden">0%</span>
+                </div>
+                <div id="status-progress-shell" class="status-progress-shell hidden">
+                    <div class="status-progress-track">
+                        <div id="status-progress-bar" class="status-progress-bar"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="download-section" class="generated-page mt-6 hidden">
+                <div class="studio-panel generated-page-shell rounded-[34px] p-6">
+                    <div class="generated-page-header">
+                        <div class="generated-page-heading">
+                            <button id="back-to-editor-btn" class="secondary-button px-4 py-2 text-sm">Back To Workspace</button>
+                            <div>
+                                <p class="panel-label">Generated Clips</p>
+                            </div>
+                        </div>
+                        <span class="pipeline-badge is-ready px-4 py-2 text-xs">Ready</span>
+                    </div>
+                    <div id="generated-clips-grid" class="generated-clips-grid"></div>
+                    <div class="generated-page-footer">
+                        <div>
+                            <p class="panel-title text-lg font-semibold text-white" id="clip-title">No clip selected</p>
+                            <p class="export-copy text-sm" id="clip-details">Generate clips, then select a result card to preview or download.</p>
+                        </div>
+                        <div class="download-actions generated-page-footer-actions">
+                            <button id="download-btn" class="analyze-button px-6 py-3 text-sm font-semibold">Download MP4</button>
+                            <button id="preview-btn" class="secondary-button px-6 py-3 text-sm">Preview</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="history-section" class="studio-panel download-panel mt-6 rounded-[34px] p-6 hidden">
+                <div class="panel-heading mb-6 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="panel-label">History</p>
+                        <p class="export-copy text-sm">Your recent clips.</p>
+                    </div>
+                    <button id="clear-history-btn" class="secondary-button px-4 py-2 text-sm">Clear History</button>
+                </div>
+                <div id="history-grid" class="space-y-4"></div>
+            </section>
+            <script src="/static/js/app.js"></script>
+        </div>
+    </div>
+</body>
+</html>

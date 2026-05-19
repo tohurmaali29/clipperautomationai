@@ -1,0 +1,748 @@
+
+Perancangan dan Pembuatan Aplikasi Web Otomatisasi Video Clipping Menggunakan Gemini API dan FFmpeg Berbasis Framework FastAPI
+
+BAB 1PENDAHULUAN
+Latar Belakang
+Pesatnya pertumbuhan platform media sosial berbasis video vertikal telah mengubah cara masyarakat mengonsumsi informasi digital Video berdurasi pendek kini menjadi format paling efektif dalam menarik atensi pengguna dibandingkan video berdurasi panjang (long-form). Menurut pada jurnal berjudul Utilization of Short Form Videos (TikTok, Reels, Shorts) to Increase Brand Engagement and Visibility  CITATION Fat25 \l 1033 (Fatimah & Nasir, 2025), Salah satu fenomena penting adalah munculnya bentuk pendek konten video melalui platform seperti TikTok, Instagram Reels, dan YouTube Shorts. Namun, proses transformasi video panjang menjadi potongan klip yang menarik (highlight) memerlukan sumber daya waktu dan tenaga yang besar karena melibatkan proses kurasi manual, pemotongan (trimming), hingga penyesuaian rasio aspek.
+Pemanfaatan Kecerdasan Buatan melalui Large Language Models (LLM) seperti Gemini API menawarkan terobosan dalam analisis konten multimedia. Gemini API memungkinkan sistem untuk memahami konteks narasi dalam sebuah video melalui data transkrip teks secara mendalam. Dalam penelitian berjudul Robustness and Hallucination in ASR: A Comparative Evaluation of Whisper and Gemini  CITATION Aga25 \l 1033 (Agarwal & Misra, 2025). menjelaskan Gemini secara konsisten menunjukan tingkat kesalahan halusinasi yang lebih rendah, terutama di lingkungan yang menantang seperti lingkungan multi-speaker Mekanisme pemahaman bahasa ini sangat krusial untuk menentukan segmen video mana yang memiliki potensi "viral" berdasarkan skor relevansi dan ketajaman topik. Meskipun demikian, tantangan teknis muncul dalam ketersediaan data transkrip, di mana layanan bawaan YouTube sering kali mengalami kendala rate limit atau ketiadaan caption.
+Untuk mengatasi kendala tersebut, penggunaan model Automatic Speech Recognition (ASR) seperti Whisper menjadi solusi fallback yang andal. Dikutip dari Evaluating OpenAI's Whisper ASR: Performance analysis across diverse accents and speaker traits  CITATION Gra24 \l 1033 (Graham & Roll, 2024), Whisper adalah sistem ASR yang canggih dikembangkan oleh OpenAI, dengan akurasi tinggi dalam menyalin audio menjadi teks. Integrasi antara LLM untuk analisis konteks dan FFmpeg untuk pemrosesan multimedia otomatis menjadi kunci dalam membangun sistem video clipping yang efisien.
+Sebagai perbandingan dan untuk memahami pendekatan yang sudah ada, berikut adalah tinjauan beberapa penelitian relevan. Pendekatan awal dalam otomatisasi ringkasan video dapat dilihat dalam penelitian oleh  CITATION Pur25 \l 1033 (Purohit & Sharma, 2025) yang berjudul AI-Based Video Summarization Using FFmpeg and NLP. Penelitian tersebut membuktikan efektivitas integrasi FFmpeg dan teknik NLP konvensional untuk ekstraksi kata kunci dan deteksi topik, namun masih memiliki keterbatasan dalam memahami konteks narasi yang kompleks karena belum memanfaatkan model bahasa besar (Large Language Models). Selanjutnya, penelitian oleh CITATION Cha \l 1033 (Chaitrashree et al., 2025) dalam karyanya AI Based Real Time Video Transcript Extraction and Summarization, berhasil mengimplementasikan sistem ekstraksi transkrip secara real-time. Meskipun sistem tersebut unggul dalam kecepatan konversi audio ke teks, fokus utamanya masih terbatas pada ringkasan teks informatif untuk kebutuhan edukasi, belum menyentuh aspek otomatisasi pasca-produksi seperti pemotongan klip video secara mandiri.
+Tantangan dalam akurasi klasifikasi video juga divalidasi dalam penelitian oleh  CITATION Mar25 \l 1033 (Marevac et al., 2025) dengan judul Multimodal Video Summarization Using Machine Learning: A Comprehensive Benchmark of Feature Selection and Classifier Performance. Penelitian ini menunjukkan bahwa meskipun pendekatan multimodal memberikan hasil yang komprehensif, performa sistem sangat bergantung pada pemilihan fitur yang tepat untuk menghindari penurunan akurasi pada pengklasifikasi. Sementara itu, efektivitas model transkripsi divalidasi secara kuat oleh  CITATION Gra24 \l 1033 (Graham & Roll, 2024) serta CITATION Aga25 \l 1033  (Agarwal & Misra, 2025), yang secara kolektif membuktikan keunggulan Whisper dalam akurasi speech-to-text dan kemampuan Gemini dalam meminimalisir halusinasi pada data transkrip multimedia.
+Dari tinjauan penelitian di atas, terlihat jelas bahwa meskipun sistem ekstraksi dan ringkasan teks telah berkembang pesat, masih terdapat celah dalam mengintegrasikan hasil analisis teks tersebut menjadi sebuah produk video final yang siap unggah. Kebanyakan sistem saat ini hanya berhenti pada tahap penyediaan transkrip atau ringkasan tekstual tanpa melakukan eksekusi teknis pada media videonya. Hal ini menciptakan sebuah 'celah efisiensi' bagi konten kreator yang membutuhkan alat all-in-one. Oleh karena itu, kebaruan (novelty) dari penelitian ini adalah merancang dan membangun sebuah sistem yang tidak hanya memahami konteks video melalui Gemini API, tetapi juga melakukan otomatisasi pengolahan visual secara menyeluruh menggunakan FFmpeg, mulai dari pemotongan klip berdasarkan timestamp hingga penyesuaian rasio aspek vertikal secara otomatis.
+Penelitian ini bertujuan untuk merancang dan membangun aplikasi web "AI Video Clipper" yang mengotomatisasi seluruh alur kerja produksi video pendek. Dengan memanfaatkan Gemini API untuk segmentasi cerdas dan FFmpeg untuk eksekusi teknis seperti cropping 9:16 serta pembuatan auto-subtitle, sistem ini diharapkan dapat menjadi solusi produktivitas bagi para kreator konten di era digital.
+Rumusan Masalah
+Berdasarkan latar belakang di atas, rumusan masalah dalam penelitian ini adalah:
+Bagaimana mengintegrasikan Gemini API untuk menganalisis transkrip video secara otomatis guna mengidentifikasi segmen video yang paling potensial?
+Bagaimana merancang sistem fallback yang stabil untuk menangani limitasi kuota API dan kendala ekstraksi data dari platform YouTube?
+Bagaimana mengimplementasikan engine pengolah video menggunakan FFmpeg untuk otomatisasi pemotongan video dan penyematan subtitle yang dinamis?
+Ruang Lingkup
+Pembatasan masalah dalam penelitian ini meliputi:
+Sumber video berasal dari URL YouTube atau unggahan file video lokal (MP4/MKV).
+Analisis segmentasi dan rekomendasi klip dilakukan berdasarkan pemrosesan teks (transkrip) menggunakan layanan Gemini API.
+Metode transkripsi audio sebagai fallback menggunakan model faster-whisper untuk efisiensi komputasi.
+Output video yang dihasilkan memiliki spesifikasi format MP4.
+Implementasi sistem dibangun menggunakan bahasa pemrograman Python dengan framework FastAPI untuk backend dan Vanilla JavaScript pada sisi frontend.
+
+Tujuan Penelitian
+Tujuan yang ingin dicapai dalam penulisan skripsi ini adalah:
+Mengimplementasikan integrasi Gemini API untuk melakukan analisis konteks dan segmentasi otomatis pada konten video panjang.
+Menerapkan mekanisme mitigasi kegagalan (fallback system) pada jalur transkripsi dan analisis AI untuk menjaga stabilitas aplikasi.
+Membangun sistem pemrosesan video otomatis menggunakan FFmpeg yang mampu menangani pemotongan dan perubahan rasio aspek sesuai standar media sosial modern.
+Mengembangkan aplikasi berbasis web sebagai alat bantu bagi kreator konten untuk menghasilkan klip video pendek secara cepat dan efisien.
+
+Sistematika Penulisan
+Sistematika penulisan skripsi ini disusun untuk memberikan gambaran menyeluruh mengenai tahapan penelitian, sebagai berikut:
+BAB 1 PENDAHULUAN Bab ini berisi latar belakang masalah mengenai kebutuhan otomatisasi video pendek, rumusan masalah, ruang lingkup penelitian (URL YouTube dan file lokal), tujuan penelitian, serta sistematika penulisan laporan .
+BAB 2 TINJAUAN PUSTAKA Bab ini menguraikan teori-teori dasar yang mendukung pembuatan aplikasi, seperti konsep Artificial Intelligence, Large Language Models (Gemini API BAB 2 TINJAUAN PUSTAKA), Automatic Speech Recognition (Whisper), pengolahan video dengan FFmpeg, serta tinjauan penelitian terdahulu yang relevan .
+BAB 3 METODE PENELITIAN Bab ini menjelaskan tahapan perancangan sistem secara mendalam, meliputi arsitektur sistem, use case diagram, alur logika program (flowchart), serta rancangan antarmuka pengguna (Low fidelity dan High fidelity) .
+BAB 4 HASIL DAN PEMBAHASAN Bab ini menyajikan tahap implementasi atau pengodean sistem menggunakan FastAPI dan Python, serta hasil pengujian aplikasi menggunakan metode Black Box Testing dan pengujian kualitas klip yang dihasilkan .
+BAB 5 PENUTUP Bab ini berisi kesimpulan dari hasil pembuatan aplikasi AI Video Clipper serta saran untuk pengembangan fitur di masa mendatang (seperti penambahan platform sumber video lain).
+BAB 2TINJAUAN PUSTAKA
+ Penelitian Terdahulu
+Sebelum melakukan penelitian ini, dilakukan tinjauan terhadap beberapa studi terdahulu yang relevan guna memetakan perkembangan teknologi di bidang ringkasan video dan pengenalan suara (Automatic Speech Recognition). Tinjauan ini berfungsi untuk mengidentifikasi celah penelitian (research gap) serta posisi penelitian saat ini dibandingkan dengan metode yang sudah ada sebelumnya. Ringkasan dari beberapa literatur tersebut disajikan pada tabel berikut:
+Tabel 2. SEQ Tabel_2. \* ARABIC 1 Penelitian terdahullu
+No
+Peneliti (Tahun)
+Judul Penelitian
+Hasil Penelitian
+1
+ CITATION Pur25 \l 1033 (Purohit & Sharma, 2025)
+AI-Based Video Summarization Using FFmpeg and NLP
+Penelitian ini Berhasil mengekstraksi kata kunci dan topik untuk ringkasan video menggunakan NLP konvensional.
+2
+CITATION Cha \l 1033 (Chaitrashree et al., 2025)
+AI Based Real Time Video Transcript Extraction and Summarization
+Penelitian ini membuat sistem yang mampu melakukan transkripsi real-time dengan akurasi tinggi untuk kebutuhan edukasi fokus pada ekstraksi teks/ringkasan saja
+3
+ CITATION Mar25 \l 1033 (Marevac et al., 2025)
+Multimodal Video Summarization Using Machine Learning
+Penelitian ini menunjukkan bahwa pemilihan (Multimodal) fitur yang tepat krusial untuk akurasi klasifikasi ringkasan menggunakan Machine Learning tradisional,
+4
+ CITATION Gra24 \l 1033 (Graham & Roll, 2024)
+Evaluating OpenAI's Whisper ASR: Performance Analysis
+Penelitian ini membuktikan Whisper memiliki akurasi sangat tinggi pada berbagai aksen bicara. Fokus pada evaluasi performa ASR
+5
+ CITATION Aga25 \l 1033 (Agarwal & Misra, 2025)
+Robustness and Hallucination in ASR: A Comparative Evaluation of Whisper and Gemini
+Penelitian ini menunjukkan Gemini terbukti memiliki ketahanan (robustness) lebih tinggi dan tingkat halusinasi lebih rendah dibanding Whisper pada dataset kompleks.
+ Video Summarization (Peringkasan Video)
+Video summarization adalah proses teknis baik secara manual maupun otomatis menggunakan Artificial Intelligence (AI) untuk meringkas video yang panjang menjadi ringkasan yang lebih singkat, padat, dan representatif tanpa kehilangan konteks utama konten tersebut. Proses ini bertujuan untuk mengatasi tantangan information overload di era digital, di mana pengguna membutuhkan informasi yang cepat namun tetap komprehensif. Dengan mereduksi durasi video secara signifikan, video summarization memungkinkan audiens menangkap esensi konten tanpa harus mengonsumsi keseluruhan durasi video panjang (long-form), sehingga meningkatkan efisiensi waktu dan daya serap informasi.". Implementasi AI dalam proses ini memastikan bahwa transisi antar potongan klip tetap berkesinambungan secara naratif, sehingga menghasilkan output yang tidak hanya pendek, tetapi juga memiliki nilai guna yang setara dengan versi aslinya. Lebih jauh lagi, teknologi ini menjadi kunci dalam strategi content repurposing untuk mentransformasi video long-form menjadi klip vertikal dinamis yang lebih efektif dalam menarik atensi pengguna di berbagai platform media sosial.
+ Artificial Intelligence (AI)
+Artificial Intelligence (AI) atau Kecerdasan Buatan adalah cabang dari ilmu komputer yang berfokus pada pengembangan sistem atau mesin yang mampu melakukan tugas-tugas yang biasanya memerlukan kecerdasan manusia. CITATION Roi \l 1033 (Pakpahan, 2021) Perkembangan artificial  intelligence mampu  memberikan  terobosan-terobosan  yang  sangat  inovatif mengikuti  kondisi  terkini.  Google  search  merupakan artificial  intelligence yang  paling  banyak  digunakan  saat ini termasuk asisten virtual yang dapat memberikan komunikasi dua arah serta  deepface pada smart phone dan media sosial. Pesatnya perkembangan teknologi perangkat keras saat ini membawa peran AI meluas melampaui sistem berbasis aturan (rule-based) menuju era kecerdasan generatif yang mampu memahami konteks secara mendalam. Menurut  CITATION Aga25 \l 1033 (Agarwal & Misra, 2025), integrasi arsitektur multimodal pada model AI modern memungkinkannya untuk tidak hanya memproses teks, tetapi juga melakukan penalaran (reasoning) terhadap data audio dan video dengan tingkat halusinasi yang rendah. 
+Cara kerja Artificial Intelligence (AI) memusatkan pada kemampuan sistem dalam memproses data dalam jumlah besar melalui algoritma cerdas untuk mengenali pola dan fitur secara otomatis. Model AI modern memanfaatkan arsitektur multimodal yang memungkinkannya melakukan penalaran konteks (contextual reasoning) dengan mengintegrasikan berbagai tipe input data. Proses ini diawali dengan tahap data ingestion atau penyerapan data, yang kemudian dilanjutkan dengan tahap pembelajaran (learning phase) di mana model menyesuaikan parameter internalnya untuk meminimalkan tingkat kesalahan atau halusinasi dalam output.
+Perubahan ini memungkinkan AI untuk melakukan tugas-tugas kompleks seperti analisis sentimen, ekstraksi poin-poin penting secara otomatis, hingga pengenalan pola viralitas pada konten multimedia yang menjadi fondasi utama dalam efisiensi produksi konten digital saat ini. Meskipun AI memiliki kemampuan otomatisasi yang tinggi, penguatan sumber daya manusia tetap menjadi faktor krusial agar teknologi ini tetap diposisikan sebagai alat pendukung (supporting tools) yang berada di bawah kendali manusia untuk mencapai produktivitas yang maksimal.
+ Large Language Models (LLM)
+Large Language Model (LLM) adalah jenis kecerdasan buatan (AI) yang dilatih menggunakan teknologi deep learning dan data teks dalam jumlah sangat besar untuk memahami, memproses, serta menghasilkan bahasa alami layaknya manusia.   CITATION Rac24 \l 1033 (Rachmat & Kesuma, 2024) Large Language Model (LLM)  memungkinkan kita untuk menjalankan berbagai tugas yang terkait dengan pemakaian atau penggunaan bahasa, seperti menghasilkan teks, melakukan translasi bahasa, meringkas naskah, menjawab pertanyaan, menulis kode, dan melakukan analisa sentimen.
+Perkembangan LLM saat ini telah berevolusi menjadi sistem yang mampu melakukan berbagai tugas linguistik kompleks tanpa memerlukan pelatihan khusus untuk setiap domain (zero-shot learning). Menurut  CITATION Rad22 \l 1033 (Radford et al., 2022), kemampuan ini mencakup penalaran konteks yang mendalam pada data teks berskala masif. Sejalan dengan hal tersebut,  CITATION Aga25 \l 1033 (Agarwal & Misra, 2025) menekankan bahwa keunggulan utama LLM generasi terbaru terletak pada arsitektur yang lebih stabil dalam meminimalisir kesalahan interpretasi atau halusinasi. Hal ini menjadikan LLM sebagai komponen inti yang sangat efektif untuk melakukan ekstraksi informasi penting secara otomatis dan akurat, yang pada akhirnya meningkatkan efisiensi dalam pengolahan konten multimedia berbasis teks.
+Secara teknis, operasional LLM mengikuti siklus pemrosesan data yang sistematis. Seperti pada gambar 2.1, Proses ini dimulai dari Input Text yang kemudian dipecah menjadi unit-unit kecil melalui Tokenizer. Data tersebut dipetakan ke dalam ruang vektor numerik melalui tahap Embedding, yang kemudian diproses oleh Encoder untuk menangkap struktur bahasa. Inti dari kemampuan penalaran LLM terletak pada Attention Mechanism, yang memungkinkan model memberikan bobot lebih pada bagian teks yang paling relevan secara kontekstual. Hasil pemrosesan ini diterjemahkan kembali oleh Decoder hingga menghasilkan Output Text yang akurat dan sesuai dengan instruksi pengguna.
+
+Gambar 2.  SEQ Gambar_2. \* ARABIC 1 Siklus LLM
+ Google Gemini
+Google Gemini merupakan inovasi teknologi kecerdasan buatan (Artificial Intelligence) terbaru dari Google yang dirancang sebagai model multimodal dengan kemampuan memproses berbagai format data secara bersamaan. Menurut  CITATION Ahm25 \l 1033 (Ahmad & Nasution, 2025), Google Gemini menawarkan solusi AI yang mampu mengolah informasi secara kontekstual dan cepat, sehingga memberikan dampak positif terhadap efektivitas kerja serta kecepatan pemahaman terhadap data yang kompleks. Keunggulan utama dari teknologi ini terletak pada fitur interaktifnya yang memungkinkan pengguna menyelesaikan tugas-tugas akademis maupun teknis secara lebih efisien dan mendalam. Sejalan dengan itu,  CITATION Aga25 \l 1033 (Agarwal & Misra, 2025) menyatakan bahwa arsitektur multimodal pada Gemini memberikan ketahanan (robustness) yang lebih tinggi dalam memahami konteks dibandingkan model generasi sebelumnya, yang sangat krusial dalam meminimalisir kesalahan atau halusinasi saat melakukan ekstraksi informasi dari data multimedia. Arsitektur gemini bisa dilihat pada gambar 2.2
+
+Gambar 2.  SEQ Gambar_2. \* ARABIC 2 Arsitektur Mulitmodal Gemini
+ Speech to Text (STT) & Whisper
+Speech to Text (STT) atau Automatic Speech Recognition (ASR) adalah teknologi yang memungkinkan konversi sinyal suara menjadi teks tertulis secara otomatis. Salah satu model ASR yang memiliki performa mutakhir saat ini adalah Whisper, sebuah model berbasis Transformer yang dilatih menggunakan dataset audio berskala besar. Menurut CITATION Wil25 \l 1033  (William & Zahra, 2025), Whisper memiliki keunggulan dalam pengenalan suara multibahasa dan terbukti memiliki performa terbaik dalam mentranskripsi Bahasa Indonesia dibandingkan model lain seperti XLS-R, meskipun terdapat tantangan pada variasi aksen lokal. Kemampuan ini menjadikan Whisper sebagai solusi yang efisien untuk mendukung komunikasi digital dan pengolahan data multimedia.
+Namun, penggunaan model pre-trained Whisper seringkali menghadapi kendala akurasi jika tidak dioptimalkan. Berdasarkan penelitian CITATION Fat251 \l 1033  (Fathony et al., 2025), implementasi Whisper untuk Bahasa Indonesia dapat dioptimalkan menggunakan arsitektur multi-engine dan hybrid cloud guna menekan nilai Word Error Rate (WER) yang tinggi. Proses ini melibatkan tahap audio preprocessing seperti noise reduction dan pemisahan sumber suara untuk memastikan input audio yang bersih sebelum diproses oleh mesin Whisper. Dengan optimasi tersebut, Whisper mampu menghasilkan transkripsi yang lebih akurat dan responsif, yang kemudian dapat digunakan sebagai data input untuk proses analisis bahasa lebih lanjut oleh model kecerdasan buatan lainnya.
+Arsitektur Whisper bekerja dengan mengonversi input audio menjadi Log-mel Spectrogram yang kemudian diproses melalui lapisan Conv1D dan Sinusoidal Positional Encoding untuk mengekstraksi fitur akustik yang presisi. Seperti pada gambar 2.3, fitur tersebut dikelola oleh serangkaian Encoder Block dan diteruskan melalui mekanisme Cross-attention menuju Decoder Block, di mana model mengintegrasikan informasi audio dengan token teks dalam format multitask training. Proses ini diakhiri dengan Next-token prediction yang secara iteratif menghasilkan teks transkripsi, memungkinkan Whisper untuk tidak hanya mengenali ucapan, tetapi juga memahami penanda bahasa dan tugas linguistik lainnya secara simultan.
+
+Gambar 2.  SEQ Gambar_2. \* ARABIC 3 Arsitektur Whisper
+ FFmpeg
+FFmpeg merupakan sebuah kerangka kerja (framework) multimedia yang bersifat sumber terbuka (open source) dan dirancang untuk mampu menangani berbagai proses pengolahan data multimedia secara luas. Berdasarkan dokumentasi resmi  CITATION FFm25 \l 1033 (FFmpeg, 2025), perangkat lunak ini memiliki kemampuan utama dalam melakukan proses decoding, encoding, transcoding, muxing, demuxing, hingga penyaringan (filtering) pada berbagai format berkas audio maupun video. Sistem ini bekerja melalui antarmuka baris perintah (command-line interface) yang memungkinkan pengguna untuk memanipulasi media digital secara presisi, mulai dari pemotongan klip (trimming), penggabungan beberapa sumber video, hingga konversi antar kodek yang berbeda.
+Pemanfaatan FFmpeg dalam pengembangan perangkat lunak modern sering kali difungsikan sebagai mesin pengolah utama di sisi peladen (backend) karena efisiensinya yang tinggi dan konsumsi sumber daya yang relatif ringan. Menurut  CITATION FFm25 \l 1033 (FFmpeg, 2025), dukungan pustaka yang luas menjadikan teknologi ini standar industri dalam memastikan kompatibilitas berbagai format multimedia. Dalam konteks aplikasi otomatisasi, FFmpeg memungkinkan integrasi yang mulus dengan bahasa pemrograman seperti Python melalui eksekusi perintah sistem untuk menjalankan tugas pengolahan video secara real-time dan akurat.
+ Python & FastAPI
+Python
+Python adalah bahasa pemrograman tingkat tinggi yang bersifat interpretatif, berorientasi objek, dan dibangun dengan semantik dinamis. Berdasarkan dokumentasi resmi Python Software Foundation (2026), keunggulan utama bahasa ini terletak pada kombinasi struktur data tingkat tinggi yang terintegrasi dengan pengetikan dinamis (dynamic typing) dan pengikatan dinamis (dynamic binding), yang menjadikannya sangat ideal untuk pengembangan aplikasi cepat (Rapid Application Development). Python menekankan pada keterbacaan kode melalui penggunaan spasi signifikan (significant whitespace) dan sintaksis yang jernih, sehingga mampu menekan biaya pemeliharaan perangkat lunak.
+Dalam ekosistem kecerdasan buatan, Python menyediakan pustaka standar yang luas serta dukungan pihak ketiga untuk berbagai tugas komputasi ilmiah dan pengolahan multimedia. Kemampuan Python untuk bertindak sebagai bahasa "perekat" (glue language) memungkinkan integrasi yang mulus antara modul analisis bahasa alami seperti Google Gemini dengan pustaka pemrosesan video seperti FFmpeg.
+FastAPI
+FastAPI adalah kerangka kerja (framework) web modern dan berperforma tinggi yang digunakan untuk membangun Application Programming Interface (API) menggunakan bahasa Python. Menurut dokumentasi resmi yang disusun oleh Tiago (2026), FastAPI dirancang untuk mengoptimalkan kecepatan pengembangan tanpa mengorbankan performa eksekusi, yang diklaim setara dengan bahasa Go dan NodeJS. Fitur utama dari kerangka kerja ini adalah pemanfaatan Python type hints untuk melakukan validasi data secara otomatis, pendokumentasian API secara instan melalui Swagger UI, serta dukungan penuh terhadap pemrograman asinkron (asynchronous programming).
+Dukungan terhadap standar Asynchronous Server Gateway Interface (ASGI) melalui pustaka asyncio menjadikan FastAPI sangat efisien dalam menangani tugas-tugas yang memakan waktu lama (I/O bound tasks). Dalam pengembangan sistem AI Video Clipper, kemampuan asinkron ini sangat krusial agar peladen tetap responsif saat menjalankan proses berat seperti transkripsi suara melalui model Whisper atau manipulasi berkas video menggunakan FFmpeg secara simultan.
+ Rest API & JSON
+Rest API 
+Representational State Transfer Application Programming Interface atau REST API merupakan sebuah metode pertukaran data yang menjembatani komunikasi antara aplikasi klien dan peladen melalui protokol HTTP. Menurut  CITATION Sal24 \l 1033 (Salsabilla, 2024), REST API adalah arsitektur layanan web yang memungkinkan integrasi data secara efisien melalui metode standar seperti GET, POST, PUT, dan DELETE. Keunggulan utama dari teknologi ini terletak pada kemudahannya untuk dikembangkan dan kemampuannya dalam menghubungkan berbagai platform yang berbeda secara fleksibel. Dalam pembangunan sistem ini, REST API digunakan untuk memastikan bahwa setiap permintaan pengguna dapat diproses oleh backend secara terstruktur dan responsif.
+JSON
+JavaScript Object Notation (JSON) adalah format pertukaran data berbasis teks yang bersifat ringan dan mudah dipahami oleh manusia maupun mesin. Berdasarkan penelitian  CITATION Sal24 \l 1033 (Salsabilla, 2024), JSON menjadi standar utama dalam implementasi REST API karena efisiensinya dalam mentransmisikan data antara peladen dan aplikasi web. Format ini menggunakan struktur yang terdiri dari pasangan nama dan nilai (key-value pairs), sehingga proses pengiriman informasi seperti metadata video, timestamp, dan hasil analisis teks dapat dilakukan dengan ukuran berkas yang kecil namun tetap mempertahankan integritas data yang kompleks.
+ Website & Figma
+Website 
+Website adalah sekumpulan halaman informasi dalam bentuk data digital baik berupa teks, gambar, video, audio, dan animasi lainnya yang disediakan melalui jalur koneksi internet. Menurut CITATION Pur24 \l 1033  (Purwanto et al., 2024), website merupakan media informasi yang sangat efektif karena dapat diakses secara otomatis, akurat, dan real-time oleh pengguna dari berbagai lokasi geografis. Dalam implementasinya, website yang terintegrasi dengan basis data memungkinkan pengelolaan informasi yang lebih efisien, mempermudah pertukaran data, serta meningkatkan pengawasan terhadap aktivitas sistem secara terpusat. Keunggulan ini menjadikan website sebagai platform utama dalam menyediakan layanan berbasis digital bagi masyarakat maupun instansi pendidikan.
+Figma
+Figma adalah perangkat lunak berbasis cloud yang digunakan untuk perancangan desain antarmuka (User Interface) dan pengalaman pengguna (User Experience). Berdasarkan penelitian CITATION Wij26 \l 1033  (Wijaya & Testiana, 2026), Figma merupakan alat kolaborasi desain yang sangat efektif untuk menciptakan desain website yang informatif, konsisten secara visual, dan responsif. Keunggulan utama Figma terletak pada pendekatannya yang mendukung model prototyping, mulai dari pembuatan wireframe (kerangka dasar), mockup (rancangan visual), hingga prototipe fungsional yang memungkinkan desainer untuk mensimulasikan interaksi pengguna sebelum tahap pengembangan kode dimulai. Dengan menggunakan Figma, pengembang dapat memastikan bahwa struktur navigasi dan kenyamanan interaksi pengguna telah memenuhi prinsip-prinsip desain yang berpusat pada pengguna (user-centered design).
+ Metode Waterfall
+Model Waterfall merupakan salah satu model pengembangan perangkat lunak yang bersifat sekuensial atau bertahap, di mana setiap fase harus diselesaikan secara penuh sebelum melanjutkan ke tahap berikutnya. Menurut  CITATION Muh22 \l 1033 (Syarif, 2022) model ini sangat terstruktur dan sistematis, sehingga memudahkan dalam pengelolaan proyek karena setiap tahapan memiliki luaran (output) dan proses peninjauan yang jelas. Pendekatan ini memastikan bahwa kebutuhan sistem telah dianalisis secara mendalam sebelum masuk ke tahap perancangan dan pengkodean. Bisa dilihat pada gambar 2.4 adalah tahapan-tahapan Waterfall.
+Berdasarkan penelitian CITATION Muh22 \l 1033  (Syarif, 2022), tahapan-tahapan dalam model Waterfall meliputi:
+Analisis Kebutuhan (Requirements Analysis): Proses pengumpulan kebutuhan sistem secara lengkap untuk memahami permasalahan dan solusi yang diinginkan pengguna.
+Perancangan Sistem (System Design): Tahap penerjemahan kebutuhan ke dalam representasi perangkat lunak, termasuk perancangan arsitektur, antarmuka, dan basis data.
+Implementasi (Implementation): Tahap penerjemahan desain ke dalam kode program atau bahasa pemrograman tertentu.
+Pengujian (Integration & Testing): Proses penyatuan unit-unit program dan pengujian sistem secara keseluruhan untuk memastikan fungsionalitasnya sesuai dengan rencana.
+Operasi dan Pemeliharaan (Operation & Maintenance): Tahap instalasi sistem dan perbaikan jika ditemukan kesalahan setelah sistem digunakan oleh pengguna.
+
+
+Gambar 2.  SEQ Gambar_2. \* ARABIC 4 Tahapan Metode Waterfall
+ Visual Studio Code
+Visual Studio Code (VS Code) merupakan perangkat lunak penyunting kode sumber (source code editor) yang dikembangkan oleh Microsoft dan bersifat lintas platform. MenurutCITATION Mur25 \l 1033  (Murani et al., 2025) , VS Code telah menjadi salah satu alat bantu utama yang paling populer di kalangan mahasiswa informatika karena sifatnya yang gratis, ringan, dan memiliki performa yang sangat cepat. Editor ini mendukung berbagai bahasa pemrograman dan menyediakan fitur-fitur modern yang sangat membantu pengembang dalam menulis kode secara lebih terstruktur dan efisien.
+Salah satu keunggulan utama VS Code yang dijelaskan dalam penelitian CITATION Mur25 \l 1033 (Murani et al., 2025) adalah adanya fitur IntelliSense yang memberikan pelengkap kode cerdas, serta integrasi terminal yang memudahkan proses eksekusi program tanpa harus berpindah aplikasi. Selain itu, ketersediaan ekosistem ekstensi yang luas memungkinkan pengguna untuk menyesuaikan lingkungan pengembangan sesuai dengan kebutuhan proyek.
+ Struktur Navigasi
+Struktur navigasi merupakan alur dari suatu program yang merupakan rancangan hubungan dan rantai kerja dari beberapa area yang berbeda dan dapat membantu mengorganisasikan seluruh elemen multimedia. Menurut Suharni dkk. (2022), struktur navigasi sangat menentukan keberhasilan sebuah desain website karena berfungsi sebagai panduan bagi pengguna dalam menjelajahi informasi yang tersedia. Terdapat empat struktur navigasi yang umum digunakan dalam pembuatan website:
+Struktur Navigasi Linear
+Struktur navigasi linear adalah struktur yang hanya mempunyai satu rangkaian cerita yang berurutan. Berdasarkan penjelasan  CITATION Sur22 \l 1033 (Surhani et al., 2022), pada struktur ini pengguna hanya dapat berpindah ke satu halaman berikutnya atau kembali ke satu halaman sebelumnya. Struktur ini biasanya digunakan untuk presentasi atau tutorial yang mengharuskan pengguna mengikuti alur secara bertahap. Gambaran struktur navigasi linear seperti gambar dapat dilihat  2.5 berikut
+
+Gambar 2.  SEQ Gambar_2. \* ARABIC 5 Struktur Navigasi Linear
+Struktur Navigasi Non Linier
+Struktur navigasi non-linear atau struktur tidak berurutan memungkinkan pengguna untuk bergerak bebas ke halaman mana saja tanpa harus melalui urutan tertentu. Menurut  CITATION Sur22 \l 1033 (Surhani et al., 2022), meskipun pengguna memiliki kebebasan akses, setiap halaman dalam struktur ini tetap harus memiliki keterkaitan agar pengguna tidak kehilangan alur informasi. Gambaran struktur navigasi non-linear dapat dilihat seperti gambar 2.6 berikut
+
+Gambar 2.  SEQ Gambar_2. \* ARABIC 6 Struktur Navigasi Non-Linear
+Struktur Navigasi Hirarki
+Struktur navigasi hirarki atau struktur bercabang sering disebut sebagai struktur pohon (tree structure). Berdasarkan penelitian CITATION Sur22 \l 1033  (Surhani et al., 2022), pada model ini terdapat satu halaman utama (index) yang memiliki cabang-cabang ke halaman lain. Jika cabang tersebut memiliki informasi yang lebih mendalam, maka akan dibuatkan cabang baru di bawahnya (sub-menu), sehingga pengelompokan data menjadi lebih teratur. Gambaran struktur navigasi hierarki dapat dilihat seperti gambar 2.7 berikut
+
+Gambar 2.  SEQ Gambar_2. \* ARABIC 7 Struktur Navigasi Hierarki
+Struktur Navigasi Campuran
+Struktur navigasi campuran (composite) merupakan gabungan dari ketiga struktur sebelumnya (linear, non-linear, dan hirarki). Menurut  CITATION Sur22 \l 1033 (Surhani et al., 2022), struktur ini memberikan fleksibilitas tinggi karena dapat menggunakan model hirarki untuk menu utama namun tetap menyediakan alur linear untuk bagian tertentu. Struktur ini paling banyak digunakan dalam pembuatan website yang kompleks agar navigasi menjadi lebih informatif dan mudah digunakan. Gambaran struktur navigasi campuran dapat dilihat seperti gambar 2.8 berikut
+
+Gambar 2.  SEQ Gambar_2. \* ARABIC 8 Struktur Navigasi Campuran
+ UML
+Unified Modeling Language (UML) adalah sebuah bahasa standar yang digunakan untuk menentukan, memvisualisasikan, membangun, dan mendokumentasikan artefak dari sistem perangkat lunak. Menurut CITATION Nis24 \l 1033  (Nisa et el., 2024), UML merupakan metodologi dalam penyusunan desain sistem berorientasi objek yang memungkinkan pengembang untuk membuat cetak biru (blueprint) yang mencakup konsep proses bisnis, penulisan kelas-kelas dalam bahasa pemrograman spesifik, hingga skema basis data. UML membantu tim pengembang untuk berkomunikasi melalui diagram-diagram standar yang merepresentasikan struktur dan perilaku sistem.
+Usecase Diagram
+Use case diagram merupakan diagram yang menggambarkan interaksi antara aktor dengan sistem untuk menunjukkan fungsi-fungsi apa saja yang tersedia di dalam sistem tersebut. Berdasarkan penjelasan CITATION Nis24 \l 1033  (Nisa et el., 2024), diagram ini sangat penting dalam fase analisis untuk mendefinisikan persyaratan fungsional sistem. Komponen utama dalam use case diagram ada pada tabel 2.1 meliputi:
+Aktor: Mewakili peran pengguna atau sistem eksternal yang berinteraksi dengan sistem yang sedang dibangun.
+Use case: Unit fungsionalitas terkecil yang menggambarkan apa yang dilakukan oleh sistem untuk aktor tertentu.
+Relasi: Menghubungkan antara aktor dengan use case atau antar use case itu sendiri (seperti include atau extend).
+
+
+
+
+
+
+
+Tabel 2.  SEQ Tabel_2. \* ARABIC 2 Komponen Use case Diagram
+Simbol 
+Nama 
+Deskripsi 
+ 
+ 
+
+ 
+Actor 
+Orang, proses, atau sistem lain yang berinteraksi dengan sistem informasi yang akan dibuat di luar sistem informasi yang akan dibuat itu sendiri. 
+
+ 
+ 
+Use case 
+Fungsionalitas yang disediakan sistem sebagai unit-unit yang saling bertukar pesan antar unit atau aktor. 
+ 
+ 
+
+ 
+Association 
+Komunikasi antara aktor dan use case yang berpartisipasi pada use case atau use case memiliki interaksi dengan aktor. 
+ 
+ 
+Extend 
+Relasi use case tambahan ke sebuah use case yang  ditambahkan dapat berdiri sendiri walau tanpa use case tambahan itu. 
+ 
+
+
+Generalization 
+Hubungan generalisasi dan Spesialisasi (umumkhusus) antara dua buah use case dimana fungsi yang satu adalah fungsi yang lebih umum dari lainnya. 
+ 
+ 
+
+ 
+Include 
+Relasi use case tambahan ke sebuah use case dimana use case yang ditambahkan memerlukan use case ini untuk menjalankan fungsinya atau sebagai syarat dijalankan use case ini. 
+Activity diagram
+Activity diagram digunakan untuk memodelkan alur kerja (workflow) dari suatu sistem atau proses bisnis secara grafis. Menurut  CITATION Nis24 \l 1033 (Nisa et el., 2024), diagram ini memvisualisasikan urutan aktivitas, mulai dari titik awal hingga titik akhir, serta menunjukkan kondisi-kondisi pilihan (decision) yang mungkin terjadi dalam alur tersebut. Activity diagram sangat berguna untuk memperjelas perilaku sistem pada tingkat operasional dan membantu pengembang memahami bagaimana sebuah proses dieksekusi dari awal hingga selesai di dalam aplikasi. Komponen-komponen pada activity diagram dapat dilihat pada tabel 2.2 di bawah
+
+
+Tabel 2. SEQ Tabel_2. \* ARABIC 3 Komponen Activity diagram
+Simbol 
+Nama 
+Deskripsi 
+ 
+Initial 
+Status Awal 
+
+ 
+Action 
+Aktivitas yang dilakukan sistem, biasanya diawali dengan kata kerja. 
+ 
+ 
+ 
+ 
+
+ 
+Decision 
+Asosiasi percabangan dimana jika ada pilihan aktivitas lebih dari satu. 
+ 
+ 
+
+ 
+Join 
+Asosiasi penggabungan dimana lebih dari satu aktivitas digabungkan menjadi satu. 
+ 
+ 
+ 
+ 
+ 
+Final 
+ 
+ 
+Status akhir yang dilakukan sebuah sistem, sebuah diagram aktivitas memiliki sebuah status akhir. 
+ 
+ 
+Swimlane 
+Memisahkan organisasi bisnis yang bertanggung jawab terhadap aktivitas yang terjadi. 
+
+Flowchart & Wireframe
+Flowchart
+Flowchart atau bagan alir adalah representasi grafis yang menggambarkan langkah-langkah, urutan prosedur, dan logika dari suatu program atau sistem. Menurut CITATION Pan24 \l 1033  (Pande et al., 2024), flowchart berfungsi sebagai alat bantu untuk memvisualisasikan alur kerja sistem secara mendetail melalui simbol-simbol standar. Dengan menggunakan flowchart, pengembang dapat memetakan setiap proses, mulai dari titik awal (start) hingga titik akhir (end), serta titik-titik pengambilan keputusan (decision) yang menentukan arah jalannya program. Dalam pengembangan aplikasi berbasis multimedia, flowchart sangat krusial untuk memastikan bahwa logika navigasi antar halaman atau fitur berjalan sesuai dengan fungsionalitas yang direncanakan. Berikut adalah komponen flowchart terlampir pada tabel 2.3
+
+Tabel 2.  SEQ Tabel_2. \* ARABIC 4 Komponen Flowchart
+Simbol 
+Nama 
+Deskripsi 
+
+Terminator
+
+Permulaan/akhir program
+
+
+ 
+Garis alir (flow line)
+
+Arah alir program
+
+ 
+Preparation
+
+Proses inisialisasi/pemberian harga awal
+
+ 
+Proses
+
+Proses penghitungan/proses pengelolaan data
+ 
+ 
+ 
+ 
+ 
+Input/output data
+
+
+Proses input/output data, parameter, informasi
+ 
+ 
+Predefined process (sub program)
+
+Permulaan sub program/proses menjalankan sub program
+
+
+Decision
+
+Perbandingan pernyataan, penyeleksian data yang memberikan pilihan untuk langkah selanjutnya
+
+
+On page connector
+
+Penghubung bagian-bagian flowchart yang berada dalam satu halaman
+
+
+Off page connector
+
+Penghubung bagian-bagian flowchart yang berada pada halaman berbeda
+
+Wireframe
+Wireframe merupakan tahap krusial dalam perancangan antarmuka aplikasi yang berfungsi sebagai kerangka dasar untuk menyusun berbagai elemen visual pada halaman aplikasi sebelum melangkah ke proses desain utama yang lebih detail. Secara visual, rancangan ini hanya terdiri dari garis dan kotak yang bertujuan menata tata letak elemen-elemen yang akan diimplementasikan ke dalam sistem. Menurut CITATION Yus24 \l 1033  (Yusri et al., 2024), Wireframe adalah kerangka kerja desain yang digunakan untuk menyusun elemen-elemen pada halaman aplikasi sebelum proses desain utama dimulai. Penggunaan wireframe memungkinkan pengembang untuk fokus pada fungsionalitas dan hierarki informasi tanpa terganggu oleh elemen estetika seperti warna atau tipografi yang kompleks.
+Dalam praktiknya, terdapat dua tingkatan dalam pembuatan wireframe yang memiliki fungsi berbeda. Pertama adalah low-fidelity wireframe, yaitu desain paling dasar yang bertujuan untuk menentukan struktur umum dan tata letak setiap elemen. Sebagaimana dijelaskan dalam penelitian terkait, salah satu desain yang paling dasar dalam proses wireframing adalah Wireframe low-fidelity, yang dibuat dengan tujuan menentukan struktur dan tata letak dari tiap elemen yang akan dibuat dalam rancangan desain.
+Kedua adalah high-fidelity wireframe, yang merupakan pengembangan lebih lanjut di mana rancangan sudah mulai menyerupai tampilan asli aplikasi karena telah menyertakan skala dan warna yang lebih representatif.  CITATION Yus24 \l 1033 (Yusri et al., 2024) menyatakan bahwa pada tahap ini, struktur dan tata letak dari rancangan desain yang sebenarnya dapat dilihat... Perbedaannya terletak pada warna dan skala yang sudah dimasukkan dalam rancangan desain. Dengan adanya kedua tahapan ini, proses transisi dari ide konseptual menuju implementasi visual yang matang dapat dilakukan secara lebih terstruktur dan meminimalisir kesalahan logika pada antarmuka pengguna.
+
+BAB 3METODE PENELITIAN
+Penulisan bab ini bertujuan untuk memaparkan metodologi pengembangan sistem yang dibuat mengacu pada model Waterfall dalam siklus hidup pengembangan perangkat lunak (SDLC). Selaras dengan prinsip kerjanya yang bertahap, bab ini menyajikan proses pembangunan aplikasi secara sistematis, dimulai dari identifikasi kebutuhan fungsional hingga mekanisme pengujian sistem. Pada bagian awal, akan dibahas mengenai spesifikasi teknis yang diperlukan untuk menciptakan alat pemotong video otomatis. Selanjutnya, bab ini akan mendetailkan arsitektur sistem yang mengintegrasikan OpenAI Whisper, Gemini AI, dan FFmpeg sebagai motor penggerak utama. Bagian akhir akan membedah implementasi teknis dan lingkungan pengembangan, termasuk bagaimana sistem memproses input dari YouTube maupun file lokal untuk kemudian diolah menjadi klip video ringkas melalui teknologi kecerdasan buatan.
+Analisa Kebutuhan
+Analisa kebutuhan merupakan tahapan krusial dalam model Waterfall untuk mendefinisikan secara menyeluruh spesifikasi, batasan, dan fitur yang harus dimiliki oleh sistem. Proses ini bertujuan agar aplikasi ini dapat berjalan optimal dalam mentransformasi video berdurasi panjang menjadi klip-klip pendek (summarization) secara otomatis tanpa kehilangan konteks informasi yang penting. Analisa ini mencakup identifikasi kebutuhan dari sisi pengguna (fungsional) maupun dari sisi performa dan batasan sistem (non-fungsional).
+Kebutuhan Fungsional
+Kebutuhan fungsional menggambarkan proses dan layanan yang harus disediakan oleh aplikasi untuk memenuhi tujuan pengguna. Kebutuhan tersebut meliputi:
+Mekanisme Pengambilan Input Video
+Sistem memiliki modul untuk memproses tautan (URL) video dari platform pihak ketiga seperti YouTube secara langsung.Selain itu, sistem harus menyediakan fitur unggah video lokal (local video upload) sebagai mekanisme fallback atau cadangan apabila terdapat kendala teknis pada API pihak ketiga atau jika video yang diinginkan tidak memiliki subtittle bawaan.
+Modul Transkripsi Suara ke Teks (ASR):
+Untuk mengubah data audio menjadi teks transkrip dengan penanda waktu (timestamp), sistem mengimplementasikan teknologi OpenAI Whisper. Pemilihan teknologi ini didasarkan pada performanya yang stabil dalam pengenalan suara otomatis (Automatic Speech Recognition). Sebagaimana dinyatakan dalam studi komparatif oleh Agarwal dan Misra (2025), Whisper menunjukkan performa yang sangat baik dalam lingkungan transkripsi yang bersih dan mampu memberikan hasil yang akurat, sebagaimana ditunjukkan pada tabel 3.1. Akurasi ini sangat krusial bagi sistem untuk menghasilkan timestamp yang presisi pada tingkat kalimat, sehingga proses pemotongan video (trimming) melalui FFmpeg dapat dilakukan tepat pada titik awal dan akhir pembicaraan tanpa memotong kata di tengah kalimat.
+
+
+Tabel 3.  SEQ Tabel_3. \* ARABIC 1 Hasil Evaluasi Whisper dan Gemini
+Model
+Dataset
+WER(%)
+HER (%)
+Domain Shift(%)
+Whisper
+LibriSpeech
+9.3
+4.2
+15.7
+Whisper
+YouTube-50
+28.5
+17.4
+32.1
+Gemini
+LibriSpeech
+8.9
+3.7
+12.3
+Gemini
+YouTube-50
+17.6
+8.2
+25.8
+Analisis Konten Berbasis Kecerdasan Buatan:
+Sistem menggunakan Gemini API untuk menjalankan analisis semantik terhadap teks transkrip guna mengidentifikasi segmen video yang paling menarik. Pemilihan Gemini AI didasarkan pada efisiensi kinerjanya dalam memproses instruksi. Berdasarkan penelitian CITATION Tia24 \l 1033  (Tiara & Pamuji, 2024), Dapat dilihat pada gambar komparasi 3.1 Gemini AI memiliki tingkat efisiensi penyelesaian tugas sebesar 0,10 per detik dengan tingkat learnability mencapai 92%, yang menunjukkan keunggulan dalam kecepatan respons dan kemudahan integrasi dibandingkan model kompetitornya.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 1 Komparasi Nilai Usability Gemini dan chatGPT
+Selain efisiensi, aspek keandalan informasi menjadi pertimbangan utama. Menurut CITATION Aga25 \l 1033  (Agarwal & Misra, 2025), arsitektur multimodal pada Gemini memungkinkannya memiliki pemahaman kontekstual yang superior dan tingkat kesalahan halusinasi (hallucination error) yang lebih rendah. Hal ini sangat penting bagi aplikasi Klipzy untuk memastikan bahwa rekomendasi cuplikan yang dihasilkan benar-benar merepresentasikan isi video asli dan tidak menghasilkan informasi palsu atau menyimpang dari konteks transkrip.
+Manipulasi dan Pemotongan Video Otomatis:
+Sistem memiliki kapabilitas untuk melakukan penyuntingan video secara programatis dengan memanfaatkan pustaka FFmpeg. Proses pemotongan ini dilakukan secara otomatis berdasarkan parameter timestamp yang telah divalidasi oleh modul analisis AI, sehingga hasil potongan video tetap menjaga kesinambungan antara audio dan visual.
+Manajemen Output:
+Sistem dapat menyajikan hasil pemotongan video akhir ke dalam format standar yang umum digunakan seperti MP4 guna menjamin kompatibilitas di berbagai perangkat. Setelah seluruh rangkaian proses pemrosesan selesai, sistem wajib menyediakan akses atau tombol unduh yang dapat digunakan oleh pengguna untuk menyimpan hasil klip tersebut ke penyimpanan lokal mereka.
+Kebutuhan Non Fungsional
+Kebutuhan non-fungsional menetapkan parameter kualitas dan standar operasional yang harus dipenuhi untuk menjamin keandalan sistem, di luar fitur spesifik yang ditawarkan. Aspek ini menitikberatkan pada efisiensi performa, stabilitas aplikasi, serta spesifikasi teknis yang mendasari jalannya proses video clipping. Adapun rincian kebutuhan non-fungsional yang ditetapkan untuk mendukung fungsionalitas aplikasi Klipzy adalah sebagai berikut:
+Kebutuhan Perangkat Keras 
+Perangkat: HP Victus
+RAM: 8 GB
+Processor: AMD Ryzen 5 7535HS
+Graphics: Radeon Graphics
+System Type : 64-bit operating system, x64-based processor
+
+Kebutuhan Perangkat Lunak
+Sistem Operasi Windows.
+Tools Editor: Visual Studio Code digunakan untuk menulis, mengedit, dan menjalankan kode program.
+Framework Backend: FastAPI digunakan untuk membangun layanan backend dan REST API.
+Bahasa Pemrograman: Python digunakan sebagai bahasa pemrograman utama dalam pengembangan sistem.
+Web Browser: Browser digunakan untuk menjalankan antarmuka sistem berbasis web.
+Tools Pemrosesan Video: FFmpeg digunakan untuk proses trimming video, pengaturan rasio, dan hardcode subtitle.
+Layanan AI: Gemini API digunakan untuk menganalisis transcript dan menentukan rekomendasi clip.
+Tools Transkripsi: Faster-Whisper digunakan untuk transkripsi audio sebagai fallback dan pembuatan subtitle otomatis.
+
+Pustka Python
+FastAPI
+Framework backend untuk membangun REST API
+uvicorn
+Server untuk menjalankan aplikasi FastAPI
+google-generativeai
+Integrasi dengan Gemini API
+youtube-transcript-api
+Mengambil transcript dari video YouTube
+python-dotenv
+Membaca konfigurasi dari file .env
+requests
+Mengirim HTTP request, misalnya untuk mengambil subtitle/caption
+pydantic
+Validasi data request dan response
+yt-dlp
+Mengambil metadata video, caption, dan media dari YouTube
+faster-whisper
+Melakukan transkripsi audio sebagai fallback atau untuk subtitle timing
+Flask
+Masih tercantum di dependency sebagai kompatibilitas lama, tetapi backend utama project saat ini memakai FastAPI
+
+Koneksi Internet 
+Digunakan untuk akses YouTube, pengambilan transcript, dan Gemini API
+Perancangan Sistem
+Tahap ini menguraikan desain konseptual dan struktural dari sistem otomatisasi pemotongan video. Perancangan ini berfungsi sebagai fondasi utama bagi fase implementasi, guna memastikan bahwa seluruh kebutuhan fungsional dan non-fungsional yang telah dipetakan pada tahap analisis dapat terealisasi dengan tepat. Melalui perancangan yang terstruktur, integrasi antara pemrosesan bahasa alami (NLP) dan pengolahan multimedia dapat berjalan selaras untuk menghasilkan sistem yang andal dalam meringkas konten video. Untuk alur sistem AI Automation ini dapat dilihat pada gambar 3.1 berikut
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 2 Perancangan  Sistem
+Proses dimulai ketika pengguna memasukkan tautan video YouTube atau mengunggah file video lokal ke dalam sistem. Setelah video diterima, sistem akan mengambil transcript atau melakukan transkripsi audio apabila transcript tidak tersedia. Selanjutnya, transcript dianalisis menggunakan kecerdasan buatan untuk menentukan segmen yang paling relevan atau menarik. Berdasarkan hasil analisis tersebut, sistem melakukan pemotongan video, pembuatan subtitle, dan rendering akhir hingga menghasilkan file klip video dalam format MP4 yang dapat dipratinjau dan diunduh oleh pengguna.
+Perancangan Arsitektur Sistem
+Perancangan arsitektur sistem menjelaskan susunan komponen internal yang membentuk aplikasi serta hubungan antar komponen tersebut dalam menjalankan fungsi sistem. Pada penelitian ini, arsitektur sistem dirancang secara modular agar setiap proses utama memiliki tanggung jawab yang jelas. Antarmuka web berfungsi sebagai media interaksi pengguna untuk memasukkan video, memilih segmen, dan mengunduh hasil clip. Seluruh permintaan dari antarmuka diteruskan ke backend FastAPI yang berperan sebagai pusat pengendali alur proses. Backend kemudian berkomunikasi dengan transcript service untuk memperoleh transcript, Gemini service untuk menganalisis isi video, subtitle service untuk membentuk subtitle, serta video service untuk memotong dan merender video dengan bantuan FFmpeg. Dengan arsitektur tersebut, sistem dapat mengintegrasikan proses analisis konten, transkripsi, subtitle, dan pemrosesan video secara terstruktur dalam satu aplikasi. Gambar untuk perancangan arsitektur sistem bisa dilihat pada gambar 3.2 ini.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 3 Arsitektur Sistem
+Perancangan Alur Kerja Sistem
+Perancangan Perancangan alur kerja sistem menjelaskan tahapan proses yang dijalankan oleh aplikasi dalam mengubah video sumber menjadi klip pendek secara otomatis. Alur kerja ini dirancang agar setiap proses berjalan secara berurutan, terstruktur, dan saling terhubung mulai dari tahap input video hingga menghasilkan output akhir berupa file klip yang siap dipratinjau dan diunduh oleh pengguna. Dengan adanya perancangan alur kerja yang jelas, sistem dapat dibangun secara lebih sistematis serta memudahkan proses implementasi, pengujian, dan evaluasi.
+Pada sistem yang dibangun, proses dimulai ketika pengguna memberikan input berupa tautan video YouTube atau file video lokal melalui antarmuka aplikasi. Setelah input diterima, sistem akan melakukan validasi sumber video untuk memastikan bahwa data dapat diproses lebih lanjut. Jika sumber video valid, sistem akan melanjutkan ke tahap pengambilan transcript atau transkripsi audio. Pada video yang berasal dari YouTube, sistem terlebih dahulu mencoba memperoleh transcript secara langsung. Selain itu, sistem juga membaca metadata video, termasuk informasi yang dapat digunakan sebagai kandidat heatmap apabila tersedia. Data tersebut dapat membantu proses analisis dalam menentukan bagian video yang paling relevan untuk dijadikan klip.
+Apabila transcript tidak tersedia atau gagal diambil secara langsung dari YouTube, sistem akan menjalankan mekanisme fallback. Pada mekanisme ini, sistem mencoba memperoleh caption melalui yt-dlp. Jika caption tetap tidak berhasil diperoleh, sistem akan melanjutkan ke proses pengunduhan audio untuk kemudian ditranskripsikan menggunakan Whisper. Dengan mekanisme ini, sistem tetap memiliki alternatif untuk memperoleh data teks walaupun sumber transcript utama gagal. Adanya alur fallback ini penting agar sistem tetap dapat digunakan pada berbagai kondisi video dan tidak hanya bergantung pada satu metode pengambilan transcript.
+Untuk sumber video lokal, alur kerja sistem sedikit berbeda. Pengguna dapat langsung mengunggah file video lokal melalui antarmuka aplikasi. Setelah itu, sistem akan membaca durasi video lokal dan menjalankan proses transkripsi audio menggunakan Whisper. Hasil transkripsi ini kemudian digunakan sebagai dasar untuk proses analisis konten, sebagaimana transcript yang diperoleh dari video YouTube. Dengan demikian, baik video YouTube maupun video lokal pada akhirnya diproses ke tahap yang sama, yaitu tahap analisis transcript.
+Setelah transcript tersedia, sistem menjalankan analisis menggunakan Gemini API untuk mengidentifikasi bagian-bagian video yang dianggap paling menarik, informatif, atau memiliki potensi untuk dijadikan klip pendek. Dalam implementasinya, sistem juga menyediakan fallback pada tahap analisis AI. Jika analisis menggunakan Gemini tidak berhasil dijalankan, sistem akan menggunakan analisis cadangan agar proses pemilihan segmen klip tetap dapat dilanjutkan. Hasil dari tahap ini berupa metadata klip yang memuat informasi seperti waktu mulai, waktu selesai, serta judul atau ringkasan singkat segmen video.
+Metadata klip yang telah diperoleh kemudian digunakan pada tahap pemrosesan video. Pada tahap ini, sistem menampilkan halaman kerja utama yang memuat rekomendasi segmen klip, area pratinjau video, serta editor pemotongan. Pengguna dapat meninjau hasil rekomendasi AI, melakukan penyesuaian trim secara manual, dan menentukan pengaturan ekspor seperti rasio video dan durasi klip. Setelah pengguna menentukan segmen dan pengaturan yang diinginkan, sistem melanjutkan ke proses pembuatan klip.
+Pada tahap pembuatan klip, sistem melakukan pemotongan video sesuai metadata waktu yang telah ditetapkan. Setelah itu, video disesuaikan ke rasio tampilan yang dipilih pengguna. Sistem juga membuat subtitle berdasarkan transcript yang tersedia, kemudian menerapkannya ke dalam video menggunakan FFmpeg. Proses ini menghasilkan file video akhir dalam format MP4 yang siap ditampilkan kepada pengguna.
+Setelah proses rendering selesai, sistem akan menampilkan halaman hasil yang berisi klip video yang telah berhasil dibuat. Pada tahap ini, pengguna dapat melakukan pratinjau hasil akhir, mengunduh klip, atau melakukan penyesuaian lanjutan seperti mengedit subtitle pada klip yang telah dihasilkan. Hasil klip yang telah dibuat juga dapat disimpan ke riwayat lokal agar dapat diakses kembali pada sesi berikutnya. Dengan demikian, alur kerja sistem tidak berhenti pada proses analisis dan render saja, tetapi juga mendukung pengelolaan hasil akhir oleh pengguna.
+Secara keseluruhan, perancangan alur kerja sistem ini menunjukkan bahwa aplikasi tidak hanya berfokus pada proses otomatisasi pemotongan video, tetapi juga mengintegrasikan proses fallback transcript, fallback analisis AI, pengaturan trim manual, pembuatan subtitle, rendering video, hingga pengelolaan hasil akhir. Rangkaian proses ini menjadikan sistem lebih fleksibel, tangguh, dan sesuai untuk mendukung kebutuhan pembuatan klip video pendek secara efisien.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 4 Flowchart Sistem
+Berdasarkan flowchart pada Gambar 3.3, alur kerja sistem dapat dijelaskan sebagai berikut:
+Input video 
+Proses dimulai ketika pengguna memasukkan tautan YouTube atau mengunggah file video lokal ke dalam sistem melalui antarmuka web.
+Validasi input
+Sistem memeriksa apakah input yang diberikan valid dan dapat diproses. Jika input tidak valid, sistem akan menampilkan pesan kesalahan dan pengguna diminta melakukan input ulang.
+Identifikasi sumber video
+Setelah input dinyatakan valid, sistem menentukan apakah sumber video berasal dari YouTube atau dari file lokal yang diunggah pengguna.
+Pembacaan metadata video
+Pada video YouTube, sistem membaca metadata video untuk memperoleh informasi pendukung seperti durasi video dan kandidat heatmap jika tersedia.
+Pengambilan transcript utama
+Sistem mencoba mengambil transcript secara langsung dari video YouTube sebagai sumber teks utama untuk analisis.
+Mekanisme fallback transcript
+Jika transcript tidak tersedia, sistem mencoba memperoleh caption menggunakan yt-dlp. Jika caption tetap tidak berhasil diperoleh, sistem akan mengunduh audio video dan menjalankan transkripsi menggunakan Whisper.
+Transkripsi video local
+Untuk file video lokal, sistem membaca durasi video dan melakukan transkripsi audio menggunakan Whisper.
+Analisis transcript
+Transcript yang berhasil diperoleh, baik dari YouTube maupun dari file lokal, kemudian dianalisis menggunakan Gemini API untuk menentukan segmen video yang paling relevan atau menarik.
+Mekanisme fallback AI
+Jika analisis menggunakan Gemini gagal, sistem menggunakan analisis cadangan agar proses tetap dapat dilanjutkan.
+Menampilkan workspace dan hasil AI
+Setelah metadata klip diperoleh, sistem menampilkan halaman kerja utama yang berisi hasil rekomendasi AI, preview video, dan editor trim.
+Pengaturan trim dan ekspor
+Pengguna dapat memilih segmen klip, menyesuaikan titik awal dan akhir secara manual, serta menentukan rasio dan durasi ekspor.
+Pembuatan klip
+Sistem memotong video sesuai segmen yang dipilih, menyesuaikan rasio tampilan, membuat subtitle, dan menerapkan subtitle ke dalam video.
+Rendering output akhir
+Sistem menghasilkan file video akhir dalam format MP4.
+Menampilkan hasil dan pengelolaan output
+Klip yang telah dihasilkan ditampilkan kepada pengguna untuk dipratinjau, diedit kembali jika diperlukan, diunduh, dan disimpan ke riwayat lokal.
+Selain flowchart, alur kerja sistem juga dapat digambarkan melalui activity diagram. Jika flowchart menekankan urutan proses secara umum, maka activity diagram menggambarkan aktivitas yang dilakukan sistem dari awal hingga akhir beserta percabangan keputusan yang terjadi selama proses berlangsung. Activity diagram pada sistem ini digunakan untuk memperlihatkan keterkaitan antara sumber input, proses pengambilan transcript, analisis AI, pembuatan klip, hingga pengelolaan hasil akhir.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 5 Activity diagram
+Berdasarkan activity diagram pada Gambar 3.4, aktivitas sistem dimulai dari pemilihan sumber video oleh pengguna. Sistem kemudian memisahkan alur proses menjadi dua cabang utama, yaitu cabang video YouTube dan cabang video lokal. Pada cabang YouTube, aktivitas dilanjutkan dengan pembacaan metadata, pemeriksaan heatmap, pengambilan transcript, serta fallback ke caption dan transkripsi audio apabila diperlukan. Pada cabang lokal, aktivitas dilanjutkan dengan unggah video, pembacaan durasi, dan transkripsi video lokal.
+Setelah transcript tersedia, kedua cabang proses bergabung ke tahap analisis transcript menggunakan Gemini. Tahap ini juga memiliki percabangan keputusan, yaitu apakah analisis Gemini berhasil atau tidak. Jika berhasil, sistem menggunakan hasil analisis utama. Jika tidak berhasil, sistem menggunakan analisis cadangan. Hasil dari tahap analisis ini berupa metadata segmen klip yang kemudian digunakan untuk memulai aktivitas pengolahan video.
+Aktivitas berikutnya meliputi penampilan halaman workspace dan AI insights, penyesuaian trim dan pengaturan ekspor, proses generate clip, pemotongan video, penyesuaian rasio, pembuatan dan penerapan subtitle, serta rendering file MP4 akhir. Setelah proses ini selesai, sistem menampilkan halaman hasil generate yang memungkinkan pengguna untuk mengedit klip, mengunduh hasil, dan menyimpan klip ke riwayat lokal. Seluruh rangkaian aktivitas tersebut berakhir ketika hasil akhir berhasil ditampilkan dan siap digunakan oleh pengguna.
+Dengan adanya flowchart dan activity diagram, perancangan alur kerja sistem menjadi lebih mudah dipahami baik dari sisi urutan proses maupun dari sisi aktivitas internal yang dijalankan sistem. Kedua diagram tersebut saling melengkapi dalam menjelaskan bagaimana aplikasi bekerja secara keseluruhan, mulai dari tahap input video hingga output akhir berupa klip video yang siap dipratinjau, diunduh, dan dikelola kembali.
+
+Perancangan Data
+Perancangan data merupakan tahap yang menjelaskan jenis data yang digunakan, diolah, dan dihasilkan oleh sistem selama proses berjalan. Pada penelitian ini, data memegang peranan penting karena seluruh proses analisis, pemilihan segmen, dan pembuatan klip sangat bergantung pada data video, data transcript, serta metadata hasil analisis. Perancangan data dilakukan agar setiap data yang diproses oleh sistem memiliki struktur yang jelas dan dapat digunakan secara konsisten pada setiap modul.
+Data utama pertama yang dikelola oleh sistem adalah data video. Data video merupakan input mentah yang berasal dari tautan YouTube atau file lokal yang diunggah pengguna. Dalam implementasinya, data ini dapat berbentuk stream video dari YouTube atau file multimedia berformat seperti .mp4. Data video menjadi sumber utama yang akan diproses pada tahap transkripsi, pemotongan, dan rendering akhir. Selain itu, data video juga mengandung informasi penting seperti durasi video yang digunakan untuk menentukan batas pemotongan klip.
+Data kedua adalah data transkrip. Data transkrip merupakan hasil konversi audio menjadi teks, baik yang diperoleh langsung dari transcript YouTube maupun dari proses transkripsi otomatis menggunakan Whisper. Dalam sistem ini, data transkrip tidak hanya berupa teks biasa, tetapi juga dapat memuat informasi waktu atau timestamp pada setiap bagian ucapan. Keberadaan timestamp sangat penting karena menjadi acuan bagi sistem AI dalam menentukan segmen mana yang sesuai untuk dipotong menjadi klip video.
+Data ketiga adalah metadata klip. Metadata klip merupakan data hasil analisis AI yang berisi informasi mengenai segmen-segmen video yang direkomendasikan. Metadata ini umumnya mencakup waktu mulai (start-time), waktu selesai (end-time), judul singkat segmen (headline atau title), serta skor relevansi atau skor viralitas dari segmen tersebut. Metadata klip inilah yang digunakan sistem pada tahap pemotongan video dan penyusunan hasil rekomendasi pada antarmuka pengguna.
+Selain tiga data utama tersebut, sistem juga mengelola data subtitle. Data subtitle dihasilkan dari transcript atau hasil transkripsi audio yang kemudian diubah ke dalam format .ass agar dapat ditanamkan langsung ke video. Data subtitle ini berisi potongan teks, waktu mulai tampil, waktu selesai tampil, serta beberapa parameter gaya tampilan seperti ukuran huruf, warna, dan posisi subtitle pada video.
+Sistem juga menghasilkan data output berupa file klip video dalam format .mp4. Data output ini merupakan hasil akhir dari seluruh rangkaian proses yang telah dilakukan sistem, mulai dari pengambilan video, analisis transcript, penentuan segmen, pemotongan video, hingga penambahan subtitle. Dengan demikian, perancangan data dalam sistem ini mencakup data masukan, data proses, dan data keluaran yang saling terhubung satu sama lain.
+Secara keseluruhan, perancangan data pada sistem ini bertujuan untuk memastikan bahwa setiap jenis data dapat dikelola dengan baik oleh modul-modul yang ada. Struktur data yang jelas juga mempermudah integrasi antarproses, mengurangi kemungkinan kesalahan saat pemrosesan, serta mendukung pengembangan sistem pada tahap implementasi dan pengujian. Daftar data yang digunakan dan dikelola dalam disajikan secara rinci pada Tabel 3.2 berikut ini.
+Tabel 3.  SEQ Tabel_3. \* ARABIC 2 Daftar Data
+Nama Data
+Bentuk Data
+Sumber
+Fungsi
+Data Video
+File .mp4 / URL YouTube
+Pengguna
+Sumber utama video
+Data Transkrip
+Teks / JSON bertimestamp
+Transcript service / Whisper
+Dasar analisis isi video
+Metadata Klip
+JSON
+Gemini service
+Menentukan segmen clip
+Data Subtitle
+File .ass
+Subtitle service
+Menampilkan subtitle pada video
+Output Klip
+File .mp4
+Video service
+Hasil akhir yang diunduh pengguna
+
+Perancangan Interaksi Pengguna
+Perancangan interaksi pengguna menjelaskan bagaimana pengguna berinteraksi dengan sistem untuk menjalankan fungsi-fungsi utama pada aplikasi pemotongan video otomatis. Pada penelitian ini, interaksi pengguna dirancang melalui antarmuka berbasis web yang memungkinkan pengguna mengakses fitur sistem secara langsung melalui elemen visual seperti kolom input, tombol aksi, panel rekomendasi, editor trim, pengaturan ekspor, serta halaman hasil generate. Perancangan ini bertujuan untuk menciptakan pengalaman penggunaan yang mudah dipahami, efisien, dan sesuai dengan kebutuhan pengguna dalam membuat klip video secara otomatis.
+Aplikasi ini menggunakan pola interaksi langsung (direct manipulation), yaitu pengguna memberikan perintah melalui klik, input form, dan pemilihan komponen antarmuka. Dengan pendekatan ini, pengguna tidak perlu menghafal sintaks atau perintah tertentu karena seluruh fitur utama telah disediakan dalam bentuk elemen visual yang mudah dikenali. Hal ini diharapkan dapat mempermudah pengguna dalam memahami alur penggunaan sistem, terutama bagi pengguna yang belum familiar dengan proses analisis video berbasis AI.
+Interaksi pengguna dimulai ketika pengguna membuka halaman utama sistem. Pada halaman tersebut, pengguna dapat memilih sumber video berupa tautan YouTube atau file video lokal. Setelah sumber video dimasukkan, pengguna dapat menjalankan proses analisis menggunakan tombol yang telah tersedia. Sistem kemudian akan menampilkan status proses agar pengguna mengetahui bahwa sistem sedang melakukan pengambilan transcript, analisis AI, atau proses generate clip. Umpan balik ini penting untuk menjaga kenyamanan pengguna selama menunggu proses yang membutuhkan waktu relatif lebih lama.
+Setelah analisis selesai dilakukan, sistem menampilkan hasil rekomendasi segmen klip dalam bentuk panel AI insights. Pada tahap ini, pengguna dapat meninjau rekomendasi yang diberikan sistem dan memilih salah satu segmen yang dianggap sesuai. Selain menggunakan rekomendasi otomatis, pengguna juga dapat mengatur potongan video secara manual melalui trim editor. Fitur ini memberikan fleksibilitas lebih besar karena pengguna dapat menentukan titik awal dan titik akhir klip sesuai kebutuhan.
+Setelah segmen clip dipilih, pengguna dapat melanjutkan ke tahap pengaturan ekspor. Pada tahap ini, pengguna dapat menentukan rasio video dan durasi output yang diinginkan. Kemudian, pengguna dapat menjalankan proses generate clip. Hasil clip yang telah dibuat ditampilkan pada halaman hasil generate dan dapat dipratinjau, diedit subtitlenya, diunduh, atau disimpan dalam riwayat lokal. Dengan demikian, interaksi pengguna pada sistem ini dirancang tidak hanya untuk mendukung otomatisasi, tetapi juga untuk memberikan kendali kepada pengguna terhadap hasil akhir clip video yang dihasilkan.
+Agar perancangan interaksi pengguna dapat dijelaskan secara lebih sistematis, bagian ini disajikan melalui use case diagram, rancangan antarmuka low fidelity, dan rancangan antarmuka high fidelity. Use case diagram digunakan untuk menunjukkan hubungan antara aktor dan fungsi utama sistem, sedangkan low fidelity dan high fidelity digunakan untuk memperlihatkan perkembangan rancangan antarmuka dari bentuk sederhana hingga bentuk final yang mendekati implementasi sebenarnya.
+Use case Diagram
+Use case diagram digunakan untuk menggambarkan hubungan antara aktor dengan fungsi-fungsi utama yang tersedia pada sistem. Pada penelitian ini, aktor utama adalah pengguna. Pengguna berinteraksi langsung dengan sistem untuk memasukkan sumber video, menjalankan analisis, memilih segmen klip, mengatur trim, mengatur ekspor, membuat klip, melihat hasil generate, mengunduh clip, dan melihat riwayat clip yang pernah dibuat. Use case diagram membantu menjelaskan ruang lingkup interaksi pengguna terhadap sistem secara umum sebelum dijabarkan lebih rinci pada rancangan antarmuka.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 6 Usecase Diagram
+Berdasarkan use case diagram pada gambar 3.5, pengguna dapat melakukan beberapa aktivitas utama. Aktivitas tersebut meliputi memasukkan tautan video YouTube, mengunggah video lokal, memilih segmen rekomendasi, melakukan trim manual, menentukan pengaturan ekspor, menghasilkan clip, mengedit hasil clip, mengunduh clip, dan membuka halaman history. Seluruh fungsi tersebut dirancang untuk mendukung kebutuhan utama sistem, yaitu membantu pengguna menghasilkan klip video pendek secara lebih cepat dan efisien.
+
+Rancangan Antarmuka Low fidelity
+Rancangan antarmuka low fidelity merupakan tahap awal dalam perancangan tampilan sistem. Pada tahap ini, rancangan difokuskan pada struktur tata letak, penempatan komponen utama, dan alur navigasi antarmuka tanpa menekankan detail visual seperti warna, tipografi, maupun elemen dekoratif. Low fidelity berfungsi untuk memastikan bahwa kebutuhan interaksi pengguna telah terakomodasi dengan baik sebelum dikembangkan menjadi tampilan yang lebih detail.
+Pada penelitian ini, rancangan low fidelity disusun untuk menggambarkan halaman-halaman utama yang digunakan dalam sistem. Halaman pertama adalah halaman input video, yang memuat area untuk memasukkan URL YouTube dan fitur upload video lokal. Halaman kedua adalah halaman hasil analisis, yang menampilkan preview video, panel AI insights, trim editor, dan export setting. Halaman ketiga adalah halaman hasil generate, yang menampilkan daftar clip yang telah berhasil dibuat beserta opsi preview dan download. Dengan menggunakan low fidelity, fokus perancangan diarahkan pada kejelasan alur penggunaan dan efisiensi navigasi antarfitur.
+Rancangan low fidelity juga membantu dalam mengidentifikasi kebutuhan komponen antarmuka, seperti posisi tombol analisis, area rekomendasi AI, slider trim, tombol generate, dan panel riwayat. Dengan demikian, tahap low fidelity berperan penting sebagai jembatan antara kebutuhan fungsional sistem dan perwujudan antarmuka pengguna. Berikut adalah hasil dari rancangan low fidelity: 
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 7 Low fidelity Home Page
+
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 8 Low fidelity Workspace Page
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 9 Low fidelity Generated Clip Page
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 10 History Page
+Rancangan Antarmuka High fidelity
+Rancangan antarmuka high fidelity merupakan pengembangan dari rancangan low fidelity ke bentuk visual yang lebih rinci dan mendekati implementasi akhir. Pada tahap ini, elemen-elemen visual seperti warna, ikon, tipografi, ukuran komponen, hierarki tampilan, dan gaya antarmuka mulai diperjelas. High fidelity digunakan untuk memberikan gambaran yang lebih nyata mengenai bagaimana sistem akan tampil dan digunakan oleh pengguna.
+Pada sistem ini, rancangan high fidelity menampilkan halaman utama dengan identitas visual aplikasi, area input video, tombol analisis, dan panel informasi status proses. Pada halaman hasil analisis, rancangan high fidelity menampilkan area workspace, preview video, daftar rekomendasi AI, trim editor, serta pengaturan ekspor. Sementara itu, pada halaman hasil generate, rancangan high fidelity menampilkan clip yang telah dihasilkan beserta tombol preview, download, dan navigasi menuju editor atau history. Rancangan ini dibuat agar pengguna dapat memahami fungsi setiap komponen secara visual sekaligus merasakan alur interaksi yang lebih realistis.
+Penggunaan high fidelity dalam penelitian ini juga penting untuk menunjukkan bagaimana hasil perancangan antarmuka diterjemahkan ke dalam bentuk implementasi aplikasi web. Dengan adanya rancangan high fidelity, proses pengembangan antarmuka menjadi lebih terarah, karena pengembang telah memiliki acuan visual yang jelas mengenai susunan dan tampilan akhir sistem. Berikut adalah hasil rancangan high fedility wireframe sitem ini: 
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 11 High fidelity Home Page
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 12 High fidelity Workspace Page
+
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 13 High fidelity Generated Clip Page
+
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 14 High fidelity History Page
+Implementasi
+Bagian ini menjelaskan tahap implementasi sistem sebagai proses penerjemahan hasil perancangan ke dalam bentuk kode program yang dapat dijalankan. Pada tahap ini, rancangan yang telah disusun pada bagian sebelumnya direalisasikan melalui pemilihan lingkungan pengembangan, konfigurasi teknologi yang digunakan, pembangunan modul-modul fungsional, serta pengaturan integrasi antarbagian sistem. Uraian implementasi dalam penelitian ini dibagi ke dalam tiga pembahasan utama, yaitu lingkungan dan konfigurasi pengembangan, implementasi modul fungsional, serta integrasi dan alur data, sehingga proses pembangunan sistem dapat dijelaskan secara terstruktur dan mudah dipahami.
+Lingkungan dan Konfigurasi Pengembangan
+Pada tahap implementasi, sistem Clipper Automation AI dikembangkan menggunakan lingkungan pengembangan berbasis Python untuk mendukung proses analisis video, pemrosesan transcript, pengambilan keputusan berbasis kecerdasan buatan, serta pembuatan clip video secara otomatis. Berdasarkan struktur proyek yang digunakan, sistem ini dibangun dengan framework FastAPI sebagai backend utama yang menangani routing, request-response API, dan penyajian halaman utama aplikasi. Selain itu, file app.py tetap dipertahankan sebagai entry point lama untuk menjaga kompatibilitas saat aplikasi dijalankan menggunakan perintah yang sebelumnya telah digunakan. Dengan pendekatan ini, sistem memiliki backend yang ringan, modular, dan tetap fleksibel untuk pengembangan lanjutan.
+Pada sisi antarmuka, sistem menggunakan pendekatan server-rendered sederhana melalui folder templates dan static. Berdasarkan Gambar 3.15, direktori file templates/index.html digunakan sebagai halaman utama dashboard aplikasi, sedangkan folder static/css dan static/js digunakan untuk menyimpan stylesheet dan logika interaksi antarmuka. Tampilan frontend memanfaatkan HTML, CSS, JavaScript, serta Tailwind CSS  untuk mempercepat proses pengembangan antarmuka. Struktur ini dipilih karena sesuai untuk kebutuhan prototipe fungsional yang berfokus pada integrasi pipeline AI dan pemrosesan video, tanpa memerlukan framework frontend yang lebih kompleks.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 15 Direktori File Utama
+Dari sisi pemrosesan utama, sistem menggunakan beberapa librarydan tools pendukung yang disesuaikan dengan kebutuhan aplikasi. Berdasarkan file requirements.txt pada gambar 3.16, aplikasi memanfaatkan FastAPI, uvicorn, Flask, google-generativeai, youtube-transcript-api, python-dotenv, requests, pydantic, yt-dlp, dan faster-whisper. FastAPI dan uvicorn digunakan untuk menjalankan backend aplikasi, google-generativeai digunakan untuk proses analisis transcript menggunakan model Gemini, youtube-transcript-api digunakan untuk mengambil transcript video dari YouTube, yt-dlp digunakan sebagai pendukung pengambilan data video, sedangkan faster-whisper dimanfaatkan sebagai fallback transkripsi audio saat transcript dari YouTube tidak tersedia. Dengan kombinasi tersebut, sistem mampu menjalankan alur analisis video secara lebih lengkap dan adaptif.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 16 File requirements.txt
+Selain libraryPython, sistem juga memanfaatkan FFmpeg sebagai tools utama dalam pemrosesan video. File ffmpeg.exe disertakan langsung di dalam proyek agar proses trimming video, cropping ke rasio vertikal, serta hardcode subtitle dapat dijalankan secara lokal tanpa ketergantungan penuh pada instalasi global sistem operasi. Penggunaan FFmpeg sangat penting dalam implementasi ini karena hasil akhir sistem berupa clip video pendek yang telah dipotong sesuai segmen pilihan, diubah ke format tampilan vertikal, dan dilengkapi subtitle otomatis. Dengan demikian, konfigurasi lingkungan pengembangan pada project ini tidak hanya berfokus pada software pemrograman, tetapi juga mencakup tools multimedia yang mendukung pipeline pemrosesan konten video.
+Konfigurasi aplikasi dikelola melalui beberapa file utama, yaitu requirements.txt, config.py, .env, dan main.py. File requirements.txt digunakan untuk mendefinisikan seluruh dependensi Python yang dibutuhkan selama proses pengembangan dan eksekusi aplikasi. File config.py berfungsi untuk memuat variabel konfigurasi dari environment, seperti SECRET_KEY, GEMINI_API_KEY, YOUTUBE_API_KEY, pengaturan Whisper, lokasi folder uploads, serta konfigurasi kredensial Google Cloud. File .env digunakan untuk menyimpan parameter sensitif dan konfigurasi runtime agar tidak ditulis langsung di dalam kode program. Sementara itu, file main.py menjadi pusat konfigurasi aplikasi, termasuk pembuatan objek FastAPI, middleware CORS, mounting file statis, template HTML, serta definisi endpoint utama seperti /analyze, /analyze-upload, /generate-clip, /generate-subtitle, dan /download/{filename}. File requirements.txt dapat dilihat pada gambar berikut
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 17 file config.py 
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 18 file .env
+Struktur proyek juga menunjukkan bahwa sistem dikembangkan dengan pendekatan modular. Folder services memuat komponen utama yang menangani fungsi-fungsi spesifik, seperti transcript_service.py untuk akuisisi transcript, gemini_service.py untuk analisis berbasis AI, subtitle_service.py untuk pembuatan subtitle format .ass, dan video_service.py untuk pembuatan clip video menggunakan FFmpeg. Selain itu, folder uploads digunakan untuk menyimpan hasil sementara dan hasil akhir proses generate clip, folder tests berisi pengujian dasar sistem, dan folder utils menampung fungsi-fungsi pendukung. Susunan ini menunjukkan bahwa lingkungan pengembangan sistem dirancang agar setiap proses memiliki tanggung jawab yang jelas, sehingga mempermudah implementasi, pengujian, dan pemeliharaan sistem. Semua ini berada pada File main.py berfungsi sebagai titik masuk utama (entry point) dari aplikasi, di mana seluruh konfigurasi rute (routing) dan inisialisasi framework FastAPI didefinisikan sebagaimana diperlihatkan pada Gambar 3.19
+
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 19 file main.py 
+Secara keseluruhan, lingkungan dan konfigurasi pengembangan pada Clipper Automation AI dirancang untuk mendukung integrasi antara analisis transcript, rekomendasi clip berbasis AI, pemrosesan subtitle, dan rendering video dalam satu aplikasi yang terpusat. Kombinasi FastAPI, library AI, tools transkripsi, dan FFmpeg menjadikan sistem mampu dijalankan sebagai prototipe fungsional yang siap digunakan untuk kebutuhan penelitian dan demonstrasi implementasi..
+Implementasi Modul Fungsional
+Pada tahap implementasi, sistem dibangun dalam bentuk beberapa modul fungsional yang saling terintegrasi untuk mendukung proses analisis video hingga menghasilkan clip pendek secara otomatis. Setiap modul dirancang dengan tanggung jawab yang spesifik agar alur kerja sistem lebih terstruktur, mudah diuji, dan lebih mudah dikembangkan. Berdasarkan struktur project yang digunakan, implementasi modul fungsional pada sistem ini terdiri atas modul akuisisi transcript, modul analisis berbasis kecerdasan buatan, modul pembuatan subtitle, modul pemrosesan video, modul orkestrasi backend, serta modul antarmuka pengguna.
+Modul pertama yang diimplementasikan adalah modul akuisisi transcript yang terdapat pada file transcript_service.py. Modul ini bertugas mengambil transcript dari sumber video YouTube sebagai data utama yang akan digunakan dalam proses analisis. Implementasi awal dilakukan menggunakan youtube-transcript-api untuk mengambil subtitle yang tersedia secara langsung dari video. Selain itu, modul ini juga menangani ekstraksi video_id, pembacaan metadata video, serta normalisasi hasil transcript agar dapat diteruskan ke proses berikutnya dalam format yang seragam.
+Jika transcript utama dari YouTube tidak tersedia, sistem menerapkan mekanisme fallback agar proses tetap dapat berjalan. Fallback pertama dilakukan melalui yt-dlp untuk memperoleh caption alternatif dan metadata tambahan. Apabila proses tersebut masih gagal, sistem melanjutkan ke fallback berikutnya dengan faster-whisper untuk melakukan transkripsi audio secara lokal. Jika seluruh proses tersebut tidak berhasil, sistem masih dapat masuk ke mode mock atau demo agar aplikasi tetap dapat digunakan untuk kebutuhan pengujian dan demonstrasi. Mekanisme ini menunjukkan bahwa modul transcript dirancang cukup adaptif terhadap berbagai kondisi video sumber.
+Gambar 3.  SEQ Gambar_3. \* ARABIC 20 Implementasi modul akuisisi transcript dan mekanisme fallback
+
+Modul kedua adalah modul analisis berbasis kecerdasan buatan yang diimplementasikan pada file gemini_service.py. Modul ini menerima transcript hasil akuisisi dan memprosesnya menggunakan model Gemini melalui librarygoogle-generativeai. Tujuan utama modul ini adalah mengidentifikasi bagian-bagian video yang dianggap menarik, relevan, atau berpotensi viral untuk dijadikan clip pendek. Hasil keluaran dari modul ini berupa daftar rekomendasi clip yang berisi waktu mulai, waktu selesai, judul segmen, dan skor penilaian.
+Pada implementasinya, modul ini tidak hanya mengirim transcript ke model AI, tetapi juga melakukan pemrosesan tambahan seperti pembentukan prompt, parsing respons model, penyaringan clip, serta penyempurnaan judul clip agar hasil yang diperoleh lebih terstruktur. Selain itu, sistem juga menyediakan fallback berupa hasil analisis mock apabila layanan AI gagal memberikan respons. Dengan demikian, modul ini menjadi inti pengambilan keputusan pada sistem karena menentukan bagian video mana yang paling layak diproses lebih lanjut.
+
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 21 Implementasi modul analisis transcript berbasis Gemini
+Modul ketiga adalah modul pembuatan subtitle yang terdapat pada file subtitle_service.py.  Modul ini bertugas membentuk subtitle otomatis berdasarkan transcript atau segmen teks yang telah tersedia. Subtitle dihasilkan dalam format .ass karena format ini mendukung pengaturan tampilan yang lebih fleksibel dibandingkan subtitle standar biasa. Dengan format tersebut, sistem dapat mengatur gaya subtitle seperti jenis huruf, ukuran teks, warna, outline, dan posisi penempatan subtitle pada video.
+Implementasi modul subtitle dilakukan dengan cara memecah transcript menjadi beberapa segmen teks bertimestamp, lalu menyusunnya ke dalam struktur file .ass yang valid. Hasil subtitle ini kemudian digunakan pada tahap pemrosesan video untuk ditanamkan langsung ke clip akhir. Keberadaan modul subtitle sangat penting karena meningkatkan keterbacaan hasil clip, khususnya untuk kebutuhan konten pendek di media sosial yang sering ditonton tanpa audio penuh.
+
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 22 Implementasi pembentukan subtitle format .ass
+Modul keempat adalah modul pemrosesan video yang diimplementasikan pada file video_service.py. Modul ini bertanggung jawab terhadap proses pembuatan clip akhir berdasarkan segmen hasil analisis AI. Proses yang dilakukan meliputi persiapan sumber video, pemotongan video sesuai rentang waktu clip, penyesuaian rasio tampilan video, pembuatan subtitle sementara, dan hardcode subtitle ke video final menggunakan FFmpeg. Dengan implementasi ini, sistem dapat menghasilkan clip pendek dalam format yang siap digunakan.
+Jika sumber video berasal dari YouTube, modul ini akan memanfaatkan yt-dlp untuk mengunduh video sementara sebelum diproses. Jika sumber berasal dari file lokal, sistem langsung menggunakan file hasil unggahan pengguna. Setelah video dipotong sesuai rentang clip, sistem menyesuaikan tampilan ke rasio yang dipilih, seperti 9:16, 4:5, 1:1, atau 16:9. Selanjutnya subtitle ditanamkan secara permanen ke video sehingga hasil akhir berupa file .mp4 siap diunduh dan digunakan. Modul pembuatan clip dapat dilihat pada gambar 3.23 dibawah.
+
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 23 Implementasi modul pembuatan clip video menggunakan FFmpeg
+Modul kelima adalah modul orkestrasi backend yang terpusat pada file main.py. File ini berfungsi menghubungkan seluruh modul layanan ke dalam endpoint API yang dapat diakses oleh antarmuka pengguna. Dapat dilihat pada gambar 3.24 Endpoint /analyze digunakan untuk menganalisis video YouTube, /analyze-upload digunakan untuk menganalisis file lokal, /generate-clip digunakan untuk menghasilkan clip final, /generate-subtitle digunakan untuk membentuk subtitle secara terpisah, dan /download/{filename} digunakan untuk mengunduh hasil video. Dengan struktur ini, backend berperan sebagai pengendali utama seluruh pipeline sistem.
+Selain menghubungkan modul, backend juga menangani validasi request, penyusunan response JSON, pengelolaan cache analisis, middleware CORS, mounting file statis, serta penyajian halaman utama melalui template. Hal ini menunjukkan bahwa main.py tidak hanya berfungsi sebagai titik masuk aplikasi, tetapi juga sebagai pusat koordinasi seluruh proses implementasi yang berjalan pada sistem Clipper Automation AI.
+
+
+
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 24 Implementasi endpoint utama pada backend FastAPI
+Modul terakhir adalah modul antarmuka pengguna yang diimplementasikan melalui templates/index.html dan static/js/app.js. Modul ini menyediakan dashboard untuk memasukkan URL YouTube atau mengunggah file lokal, menampilkan hasil analisis clip, memperlihatkan rekomendasi AI, mengatur rentang trim video, menentukan rasio ekspor, dan menjalankan proses generate clip. Antarmuka ini menjadi jembatan interaksi antara pengguna dengan seluruh layanan backend yang telah diimplementasikan.
+Pada sisi interaksi, JavaScript digunakan untuk menghubungkan aksi pengguna dengan endpoint backend melalui request asinkron. Dengan demikian, pengguna dapat menjalankan proses analisis, melihat hasil rekomendasi clip, serta menghasilkan video akhir langsung dari dashboard yang tersedia. Implementasi antarmuka ini memperlihatkan bahwa sistem tidak hanya berjalan pada level backend, tetapi juga telah memiliki media interaksi yang cukup lengkap untuk mendukung skenario penggunaan nyata.
+ 
+Gambar 3.  SEQ Gambar_3. \* ARABIC 25 Tampilan dashboard pada halaman home
+Gambar 3.  SEQ Gambar_3. \* ARABIC 26 Tampilan workspace 
+Secara keseluruhan, implementasi modul fungsional pada sistem ini menunjukkan bahwa setiap komponen telah dibangun dengan pembagian tanggung jawab yang jelas. Modul transcript menangani akuisisi data, modul AI menangani analisis isi video, modul subtitle menangani pembentukan teks tayang, modul video menangani rendering clip, backend mengoordinasikan seluruh proses, dan frontend menyediakan media interaksi bagi pengguna. Struktur modular tersebut membuat sistem lebih terorganisasi serta mendukung kebutuhan implementasi, pengujian, dan pengembangan lanjutan.
+Integrasi dan Alur Data
+Integrasi dan alur data pada sistem ini dirancang untuk menghubungkan seluruh modul utama ke dalam satu rangkaian proses yang utuh, mulai dari input pengguna hingga menghasilkan clip video akhir yang siap diunduh. Integrasi ini penting karena sistem tidak hanya menjalankan satu fungsi tunggal, tetapi menggabungkan proses akuisisi transcript, analisis berbasis kecerdasan buatan, pembentukan subtitle, pemrosesan video, dan penyajian hasil dalam satu aplikasi terpusat. Dengan pendekatan tersebut, setiap modul dapat bekerja sesuai tugasnya masing-masing, namun tetap saling terhubung melalui backend sebagai pusat orkestrasi.
+Secara umum, alur data dimulai dari interaksi pengguna melalui dashboard aplikasi. Pada tahap ini, pengguna dapat memilih dua jenis sumber data, yaitu URL video YouTube atau file video lokal. Jika pengguna memasukkan URL YouTube, frontend akan mengirim request ke endpoint /analyze. Jika pengguna memilih file lokal, frontend akan mengirim request ke endpoint /analyze-upload. Kedua endpoint tersebut menjadi titik awal proses akuisisi data, meskipun jalur pemrosesan yang ditempuh sedikit berbeda sesuai jenis sumber video yang digunakan. Sekenario alur data sistem ini dapat dilihat pada gambar diagram dibawah.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 27 Diagram integrasi dan alur data sistem Clipper Automation AI
+Pada skenario input berupa URL YouTube, backend terlebih dahulu memproses URL untuk mengekstraksi identitas video, kemudian memanggil modul transcript_service.py untuk memperoleh transcript. Modul ini berusaha mengambil subtitle langsung dari YouTube menggunakan youtube-transcript-api. Selain transcript, modul ini juga dapat mengambil metadata pendukung seperti durasi video dan kandidat heatmap dari video yang bersangkutan. Hasil transcript kemudian dinormalisasi agar dapat digunakan dalam proses selanjutnya, sehingga backend menerima data dalam format yang konsisten tanpa bergantung pada sumber transcript yang digunakan.
+Apabila transcript utama dari YouTube tidak tersedia, sistem menerapkan mekanisme fallback secara bertahap. Fallback pertama dilakukan menggunakan yt-dlp untuk mencoba memperoleh caption alternatif dan metadata video. Jika pendekatan tersebut masih gagal, sistem melanjutkan ke fallback berikutnya dengan memanfaatkan faster-whisper untuk melakukan transkripsi audio secara lokal. Dalam kondisi tertentu, apabila seluruh jalur utama tidak dapat digunakan, sistem juga dapat menghasilkan transcript mock sebagai mode demonstrasi. Mekanisme ini menunjukkan bahwa alur data pada tahap awal tidak hanya bergantung pada satu layanan tunggal, tetapi dirancang adaptif agar sistem tetap dapat berjalan meskipun kondisi sumber data tidak ideal.
+Pada skenario input berupa file video lokal, alur data dimulai ketika file diunggah oleh pengguna melalui antarmuka. File tersebut diterima oleh endpoint /analyze-upload, disimpan sementara pada folder uploads, lalu diteruskan ke proses transkripsi audio. Dalam jalur ini, sistem tidak perlu mengambil data dari YouTube karena sumber video sudah tersedia secara lokal. Transcript hasil transkripsi kemudian diperlakukan sama seperti transcript dari jalur YouTube, yaitu dikirim ke modul analisis AI untuk menghasilkan rekomendasi segmen clip.
+Setelah transcript diperoleh, backend meneruskan data tersebut ke modul gemini_service.py untuk dilakukan analisis isi video. Pada tahap ini, transcript digunakan sebagai bahan utama untuk membentuk prompt analisis. Sistem kemudian mengirim prompt tersebut ke model Gemini melalui librarygoogle-generativeai. Hasil respons model diproses kembali oleh sistem agar menghasilkan daftar clip yang terstruktur, biasanya berupa waktu mulai, waktu selesai, headline segmen, dan skor penilaian. Dengan demikian, modul AI tidak hanya menerima transcript mentah, tetapi juga mengubahnya menjadi rekomendasi clip yang dapat langsung digunakan oleh pengguna maupun tahap pemrosesan video berikutnya. Alur kerja dari mekanisme fallback pada modul Gemini secara detail dapat dilihat pada Gambar 3.28.
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 28 Mekanisme fallback pada proses transcript dan analisis AI
+Pada proses analisis AI, sistem tidak hanya mengirim transcript ke model Gemini, tetapi juga menambahkan logika penyaringan dan penyesuaian hasil agar rekomendasi clip yang dihasilkan lebih relevan. Data clip yang diperoleh dari model dapat difilter berdasarkan kandidat momen tertentu, diseimbangkan distribusinya pada timeline video, lalu diperbaiki headline-nya agar lebih informatif. Dalam implementasinya, sistem terlebih dahulu membangun prompt analisis dari transcript, kemudian mencoba memanggil layanan AI melalui mekanisme provider yang tersedia. Provider utama yang digunakan adalah Google Generative AI, dengan percobaan model secara berurutan mulai dari gemini-2.5-flash, gemini-2.0-flash, hingga gemini-1.5-flash. Jika model pertama gagal memberikan respons yang valid, sistem akan melanjutkan percobaan ke model berikutnya. Dengan pendekatan ini, sistem tidak bergantung hanya pada satu model tunggal dalam proses analisis.
+Apabila seluruh model gagal, respons yang diterima kosong, atau hasil keluaran tidak dapat diparse menjadi rekomendasi clip yang valid, sistem akan mengaktifkan mekanisme fallback berupa mock analysis. Fallback ini menghasilkan daftar clip simulasi sehingga frontend tetap dapat menerima rekomendasi dan aplikasi tetap dapat digunakan pada mode demonstrasi. Dalam response sistem, kondisi ini ditandai dengan informasi sumber analisis dan status penggunaan fallback, sehingga backend dan frontend dapat membedakan apakah hasil berasal dari analisis AI langsung atau dari mode cadangan. Integrasi seperti ini memperlihatkan bahwa modul AI bukan hanya tambahan, melainkan bagian inti dari sistem yang dirancang tetap andal meskipun layanan model generatif mengalami gangguan.
+Hasil analisis AI kemudian dikembalikan ke backend dalam bentuk response JSON. Data ini mencakup transcript, daftar rekomendasi clip, metadata sumber, status cache, serta informasi apakah proses berjalan dalam mode live atau demo. Selanjutnya frontend menerima response tersebut dan menampilkan hasilnya pada halaman dashboard, khususnya pada bagian rekomendasi atau AI Insights. Pada tahap ini, pengguna dapat melihat hasil analisis, memilih clip yang diinginkan, atau melakukan penyesuaian manual melalui trim editor yang tersedia pada antarmuka.
+Ketika pengguna memilih salah satu rekomendasi clip dan menekan proses generate, frontend akan mengirimkan request ke endpoint /generate-clip. Request ini berisi data clip terpilih, seperti waktu mulai, waktu selesai, judul segmen, pengaturan subtitle, rasio video keluaran, jenis sumber video, dan jalur file lokal jika digunakan. Backend kemudian meneruskan seluruh data tersebut ke modul video_service.py, yang berperan sebagai pusat pemrosesan clip final. Pada tahap ini, sistem mulai beralih dari analisis teks menuju pemrosesan media video secara langsung.
+Modul video_service.py terlebih dahulu menyiapkan sumber video. Jika sumber berasal dari YouTube, sistem akan mengunduh video sementara menggunakan yt-dlp. Jika sumber berasal dari file lokal, sistem langsung menggunakan file yang telah diunggah pengguna sebelumnya. Setelah video tersedia, sistem melakukan trimming berdasarkan nilai start dan end dari clip yang dipilih. Hasil trimming ini menjadi dasar untuk proses selanjutnya, yaitu penyesuaian rasio tampilan video agar sesuai dengan format distribusi konten pendek seperti 9:16, 4:5, 1:1, atau 16:9.
+Jika fitur subtitle diaktifkan, backend memanggil modul subtitle_service.py untuk membentuk subtitle dalam format .ass. Modul ini mengubah transcript atau segmen subtitle menjadi struktur subtitle yang telah memiliki timestamp dan gaya tampilan tertentu. Informasi subtitle yang telah dibentuk kemudian dikirim kembali ke modul video untuk ditanamkan langsung ke hasil video. Penanaman subtitle dilakukan menggunakan FFmpeg, sehingga subtitle menjadi bagian permanen dari clip yang dihasilkan. Hasil akhir dari seluruh proses ini adalah file video .mp4 yang disimpan pada folder uploads dan dapat diunduh melalui endpoint /download/{filename}.
+Dari sudut pandang integrasi sistem, backend pada file main.py memiliki peran sentral sebagai penghubung semua modul. Backend menerima request dari frontend, memvalidasi data masukan, memanggil layanan transcript, memanggil layanan AI, memanggil layanan subtitle dan video, lalu menyusun respons akhir untuk dikirim kembali ke pengguna. Dengan kata lain, setiap modul layanan tidak berkomunikasi langsung dengan frontend, melainkan selalu melalui backend sebagai pengendali utama alur data. Pendekatan ini membuat arsitektur sistem lebih terstruktur dan memudahkan pemeliharaan karena tanggung jawab integrasi terpusat pada satu lapisan.
+Pada sisi frontend, templates/index.html dan static/js/app.js bertugas menampilkan hasil integrasi tersebut kepada pengguna seperti pada Gambar3.29. JavaScript pada frontend mengirim request secara asinkron ke endpoint backend, menerima respons berupa JSON, lalu memperbarui tampilan dashboard sesuai status proses. Dengan mekanisme ini, pengguna dapat melihat proses analisis, status mode sistem, rekomendasi clip, dan hasil video yang dihasilkan tanpa harus berinteraksi langsung dengan modul backend. Antarmuka ini menjadi lapisan penyaji yang menerjemahkan hasil pemrosesan internal sistem ke dalam bentuk yang mudah digunakan. 
+
+Gambar 3.  SEQ Gambar_3. \* ARABIC 29 Tampilan hasil integrasi alur data pada dashboard aplikasi
+Secara keseluruhan, integrasi dan alur data pada Clipper Automation AI membentuk sebuah pipeline yang saling terhubung dari input hingga output. Data bergerak dari pengguna menuju backend, diproses melalui modul transcript, dianalisis oleh modul AI, diperkaya dengan subtitle, lalu dirender menjadi clip video akhir. Keberadaan mekanisme fallback pada tahap transcript dan analisis AI juga memperkuat integrasi sistem karena memungkinkan aplikasi tetap berjalan dalam kondisi layanan utama tidak tersedia. Dengan demikian, integrasi yang diterapkan tidak hanya mendukung fungsionalitas utama sistem, tetapi juga meningkatkan keandalan aplikasi untuk kebutuhan penelitian dan demonstrasi.Agar penjelasan lebih sistematis, alur data pada Clipper Automation AI dapat diringkas sebagai berikut:
+Pengguna memasukkan URL YouTube atau mengunggah file video lokal melalui dashboard.
+Frontend mengirim request ke endpoint /analyze atau /analyze-upload.
+Backend memanggil modul transcript_service.py untuk memperoleh transcript dan metadata pendukung.
+Transcript diteruskan ke modul gemini_service.py untuk menghasilkan rekomendasi clip.
+Hasil analisis dikirim kembali ke frontend dan ditampilkan pada panel AI Insights.
+Pengguna memilih clip yang diinginkan lalu mengirim request ke endpoint /generate-clip.
+Backend memanggil modul video_service.py untuk menyiapkan video, trimming, menyesuaikan rasio, dan menggabungkan subtitle.
+Jika subtitle diaktifkan, modul subtitle_service.py membentuk file subtitle .ass yang kemudian di-hardcode ke video oleh FFmpeg.
+Sistem menghasilkan file clip akhir .mp4 pada folder uploads.
+Pengguna mengunduh hasil clip melalui endpoint /download/{filename}.
+Pengujian Sistem
+Pengujian sistem dilakukan untuk memastikan bahwa aplikasi Clipper Automation AI yang telah dibangun dapat berjalan sesuai dengan kebutuhan fungsional dan menghasilkan keluaran yang sesuai dengan tujuan penelitian. Pengujian ini mencakup dua aspek utama, yaitu pengujian fungsional untuk memverifikasi setiap fitur utama pada sistem, serta pengujian kualitas untuk menilai ketepatan hasil klip yang dihasilkan dan performa waktu pemrosesan sistem. Proses pengujian dilakukan terhadap alur utama aplikasi, mulai dari input URL video YouTube atau unggah file video lokal, proses analisis transkrip oleh sistem, pemilihan rekomendasi klip, pembuatan subtitle, proses rendering video, hingga tahap unduh hasil akhir. Dengan pengujian ini, dapat diketahui apakah sistem telah bekerja secara stabil, bebas dari kesalahan utama, dan mampu menghasilkan klip video otomatis yang relevan dengan isi video sumber.
+Pengujian Fungsional
+Pengujian fungsional pada sistem ini dilakukan menggunakan metode Black Box Testing, yaitu pengujian yang berfokus pada fungsi sistem berdasarkan masukan dan keluaran tanpa meninjau kode program secara langsung. Pengujian dilakukan pada setiap komponen utama yang tersedia pada antarmuka aplikasi, seperti kolom input URL YouTube, tombol Analyze, tombol Analyze Local, tombol Generate Clip, fitur pengaturan durasi dan rasio video, fitur unggah file lokal, serta tombol Preview dan Download. Setiap komponen diuji dengan berbagai skenario masukan, baik masukan yang valid maupun tidak valid, untuk memastikan sistem dapat memberikan respons yang sesuai. Sebagai contoh, apabila pengguna memasukkan URL yang tidak valid atau video tidak memiliki transkrip yang dapat diproses, maka sistem harus menampilkan pesan peringatan atau pesan kesalahan yang informatif. Sebaliknya, apabila input yang diberikan sesuai, sistem diharapkan mampu menampilkan hasil analisis berupa rekomendasi potongan klip, kemudian melanjutkan proses pembuatan video klip beserta subtitle secara otomatis. Hasil dari pengujian fungsional ini selanjutnya dibandingkan dengan tabel rencana pengujian untuk memastikan bahwa seluruh fitur inti telah berjalan sesuai dengan kebutuhan sistem yang telah dirancang pada bab sebelumnya.
+
+
+
+No
+Fitur yang Diuji
+Skenario Pengujian
+Input
+Output yang Diharapkan
+Output Aktual
+Hasil
+1
+Input URL YouTube
+Pengguna memasukkan URL video yang valid
+URL YouTube valid
+Sistem menerima URL dan memulai proses analisis
+Sistem berhasil memproses URL dan menampilkan hasil analisis
+Sesuai
+2
+Input URL YouTube
+Pengguna memasukkan URL yang tidak valid
+URL bukan format YouTube / URL salah
+Sistem menampilkan pesan kesalahan/peringatan
+Sistem menampilkan pesan error bahwa URL tidak valid
+Sesuai
+3
+Tombol Analyze
+Tombol ditekan setelah URL valid diisi
+URL valid
+
+Sistem mengambil transkrip dan menampilkan rekomendasi klip
+Sistem menampilkan daftar rekomendasi klip
+Sesuai
+4
+Tombol Analyze
+Tombol ditekan saat kolom URL kosong
+Kosong
+Sistem menampilkan peringatan untuk mengisi URL terlebih dahulu
+Sistem menampilkan pesan input required
+Sesuai
+5
+Analisis transcript YouTube
+Video memiliki transcript
+Video dengan subtitle/transcript tersedia
+Sistem berhasil mengambil transcript
+Transcript berhasil diproses
+Sesuai
+6
+Analisis transcript YouTube
+Video memiliki transcript
+Video tanpa subtitle/transcript
+Sistem menampilkan pesan bahwa transcript tidak tersedia
+Sistem menampilkan pesan error yang sesuai
+Sesuai
+7
+Upload file lokal
+Pengguna mengunggah file video/audio yang valid
+File .mp4 / .mp3 / format didukung
+Sistem menerima file dan memulai analisis lokal
+File berhasil diproses dan hasil analisis tampil
+Sesuai
+8
+Upload file lokal
+Tombol Analyze Local ditekan tanpa file
+Tidak ada file
+Sistem menampilkan peringatan untuk memilih file
+Sistem menampilkan pesan agar memilih file terlebih dahulu
+Sesuai
+9
+Rekomendasi klip AI
+Pengguna memilih klip lalu menekan Generate Clip
+Hasil transcript valid
+Sistem menampilkan daftar klip rekomendasi
+Daftar klip tampil di panel AI Insights
+Sesuai
+10
+Generate clip
+Pengguna memilih klip lalu menekan Generate Clip
+Data klip valid
+Sistem membuat video klip sesuai waktu yang dipilih
+Video klip berhasil dibuat
+Sesuai
+11
+Generate clip
+Tombol Generate Clip ditekan tanpa memilih klip
+Tidak ada klip dipilih
+Sistem menampilkan peringatan
+Sistem menampilkan pesan agar memilih klip terlebih dahulu
+Sesuai
+12
+Pengaturan durasi export
+Pengguna memilih durasi 30s, 45s, 60s, atau custom
+Pilihan durasi
+Sistem menyesuaikan durasi klip sesuai pilihan
+Durasi klip mengikuti pengaturan
+Sesuai
+13
+Pengaturan rasio export
+Pengguna memilih rasio video
+9:16, 4:5, 1:1, 3:4, 16:9
+
+Sistem menghasilkan video sesuai rasio yang dipilih
+Output video mengikuti rasio export
+Sesuai
+14
+Preview clip
+Pengguna menekan tombol Preview
+Clip hasil generate tersedia
+Sistem menampilkan preview video hasil
+Preview video tampil dengan benar
+Sesuai
+15
+Download clip
+Pengguna menekan tombol Download
+File clip tersedia
+Sistem mengunduh file MP4 hasil generate
+File berhasil diunduh
+Sesuai
+
+
+Pengujian Kualitas
+Selain memastikan bahwa setiap fungsi pada sistem berjalan dengan baik, kualitas prototipe Clipper Automation AI juga perlu diukur secara kuantitatif. Pengujian kualitas ini difokuskan pada dua aspek non-fungsional yang paling penting pada sistem, yaitu kualitas hasil klip yang dihasilkan serta kemudahan penggunaan sistem oleh pengguna. Dengan pengujian ini, dapat diketahui tidak hanya apakah sistem dapat berjalan, tetapi juga apakah hasil yang diberikan sudah relevan dengan video sumber dan apakah antarmuka sistem cukup mudah digunakan dalam proses pembuatan klip otomatis.
+Uji Kualitas Hasil Klip
+Pengujian ini bertujuan untuk mengukur kualitas keluaran sistem secara objektif berdasarkan kesesuaian isi klip terhadap konteks video asli dan kualitas elemen pendukung yang dihasilkan. Pada penelitian ini, kualitas hasil klip dinilai dari beberapa indikator utama, yaitu ketepatan pemilihan momen oleh AI, kesesuaian durasi klip dengan pengaturan yang dipilih, keterbacaan subtitle, serta kesesuaian format video hasil dengan kebutuhan konten vertikal.
+
+Persiapan Data Uji: Disiapkan beberapa sampel video uji, baik dari URL YouTube maupun file video lokal, dengan durasi yang bervariasi, misalnya video pendek, sedang, dan panjang. Variasi ini diperlukan agar pengujian dapat menggambarkan performa sistem pada kondisi penggunaan yang berbeda.
+Eksekusi dan Pencatatan: Setiap video diproses melalui sistem mulai dari tahap analisis, pemilihan rekomendasi klip, hingga pembuatan video hasil. Untuk setiap kasus uji dicatat beberapa komponen, yaitu durasi video sumber, durasi klip hasil, waktu analisis, waktu rendering, serta deskripsi hasil klip yang dipilih oleh sistem.
+Evaluasi Kesesuaian: Hasil klip kemudian dibandingkan dengan isi video asli untuk menilai apakah momen yang dipilih benar-benar relevan dengan topik utama video. Selain itu, subtitle yang dihasilkan juga diperiksa dari sisi sinkronisasi, kejelasan teks, dan kemudahan dibaca. Penilaian dapat menggunakan kategori seperti Sesuai, Cukup Sesuai, dan Tidak Sesuai.
+Analisis Hasil: Hasil utama dari pengujian ini adalah gambaran mengenai kemampuan sistem dalam menghasilkan klip yang relevan, menarik, dan layak digunakan sebagai video pendek. Semakin tinggi tingkat kesesuaian konteks dan kualitas subtitle, maka semakin baik performa sistem dalam mendukung otomatisasi pembuatan klip video.
+Uji Kegunaan (System Usability Scale / SUS)
+Pengujian ini bertujuan untuk mengukur tingkat kemudahan penggunaan (usability) sistem dari sudut pandang pengguna akhir. Metode yang digunakan adalah System Usability Scale (SUS), karena metode ini sederhana, umum digunakan, dan mampu memberikan gambaran kuantitatif mengenai tingkat kenyamanan pengguna saat menggunakan aplikasi.
+Pemilihan Responden: Pengujian melibatkan sekitar 10 responden yang sesuai dengan target pengguna sistem, misalnya mahasiswa, content creator pemula, atau pengguna yang membutuhkan proses pembuatan klip video secara cepat.
+Pemberian Tugas: Setiap responden diminta untuk menjalankan beberapa tugas utama pada sistem, seperti memasukkan URL video YouTube, melakukan analisis video, memilih salah satu rekomendasi klip, mengatur durasi atau rasio video, melakukan generate clip, serta mengunduh hasil akhir.
+Pengisian Kuesioner: Setelah seluruh tugas selesai dilakukan, responden diminta mengisi kuesioner SUS yang terdiri dari 10 pernyataan standar untuk menilai kemudahan penggunaan sistem.
+Perhitungan dan Interpretasi Skor: Jawaban responden kemudian dihitung menggunakan rumus standar SUS untuk menghasilkan skor akhir dalam rentang 0 sampai 100. Skor tersebut selanjutnya diinterpretasikan menggunakan kategori penilaian SUS untuk mengetahui apakah sistem termasuk memiliki tingkat kegunaan yang buruk, cukup, baik, atau sangat baik.
+Melalui dua jenis pengujian tersebut, penelitian ini tidak hanya menilai apakah sistem dapat berjalan secara teknis, tetapi juga menilai apakah hasil klip yang dihasilkan sudah berkualitas dan apakah sistem cukup mudah digunakan oleh pengguna dalam praktik nyata.
+
+
+

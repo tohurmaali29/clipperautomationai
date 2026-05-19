@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyc.*
+
+.env
+gcp-key.json
+ffmpeg.exe
+ffprobe.exe
+
+uploads/
+test_output.mp4
+test_subtitle.ass
+
+.pytest_cache/
+.mypy_cache/
