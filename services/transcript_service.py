@@ -33,7 +33,7 @@ FFPROBE_CMD = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ffprobe.
 if not os.path.exists(FFPROBE_CMD):
     FFPROBE_CMD = "ffprobe"
 
-TRANSCRIPT_UNAVAILABLE_REASON = "Transcript tidak tersedia. Video ini tidak memiliki subtitle atau tidak dapat di-fetch dari YouTube."
+TRANSCRIPT_UNAVAILABLE_REASON = "Transcript could not be generated from the video audio. Please try another video or use Analyze Local."
 
 
 @contextmanager
@@ -65,7 +65,7 @@ def _without_broken_proxy():
 
 async def get_transcript_result_async(url: str) -> dict:
     """
-    Async function untuk fetch transcript dari YouTube video
+    Async function untuk generate transcript dari audio video YouTube
     
     Args:
         url: YouTube video URL
@@ -77,7 +77,7 @@ async def get_transcript_result_async(url: str) -> dict:
         ValueError: Jika URL invalid
     """
     try:
-        logger.info(f"Fetching transcript for: {url}")
+        logger.info(f"Preparing audio transcription for: {url}")
         
         # Extract video ID dari URL
         video_id = extract_video_id(url)
@@ -86,16 +86,16 @@ async def get_transcript_result_async(url: str) -> dict:
         
         logger.info(f"Video ID: {video_id}")
         
-        # Run transcript fetching di thread pool (karena youtube-transcript-api synchronous)
+        # Run audio transcription pipeline in thread pool
         transcript_result = await asyncio.to_thread(_fetch_transcript_sync, video_id)
         transcript_result["used_fallback"] = transcript_result.get("source") == "mock"
 
-        logger.info("Transcript fetched successfully")
+        logger.info("Transcript generated successfully")
         return transcript_result
         
     except Exception as e:
-        logger.error(f"Error fetching transcript: {str(e)}")
-        logger.info("Using mock transcript as fallback")
+        logger.error(f"Error generating transcript: {str(e)}")
+        logger.info("Using mock transcript because the audio transcription pipeline failed")
         return {
             "text": generate_mock_transcript(),
             "source": "mock",
@@ -113,7 +113,7 @@ async def get_transcript_async(url: str) -> str:
 
 def _fetch_transcript_sync(video_id: str) -> dict:
     """
-    Synchronous helper function untuk fetch transcript
+    Synchronous helper function untuk generate transcript
     Dijalankan di thread pool dari async function
     """
     try:
@@ -121,7 +121,7 @@ def _fetch_transcript_sync(video_id: str) -> dict:
 
         started = perf_counter()
         whisper_result = _fetch_transcript_with_whisper(video_id)
-        logger.info("Transcript stage whisper_fallback completed in %.2fs", perf_counter() - started)
+        logger.info("Transcript stage whisper_youtube completed in %.2fs", perf_counter() - started)
         if whisper_result["text"]:
             logger.info("Transcript extracted via Whisper audio transcription")
             logger.info("Transcript pipeline completed in %.2fs", perf_counter() - total_started)
@@ -133,7 +133,7 @@ def _fetch_transcript_sync(video_id: str) -> dict:
                 source_duration=float(whisper_result.get("source_duration") or 0),
             )
 
-        logger.warning("No transcripts available for video")
+        logger.warning("Audio transcription did not produce transcript text for this video")
         logger.info("Transcript pipeline completed in %.2fs", perf_counter() - total_started)
         return _build_transcript_result(
             generate_mock_transcript(),
@@ -161,11 +161,11 @@ def _fetch_transcript_sync(video_id: str) -> dict:
 def _fetch_transcript_with_whisper(video_id: str) -> dict:
     """Transcribe a YouTube video by downloading its audio and running Whisper locally."""
     if yt_dlp is None:
-        logger.info("yt-dlp is unavailable for Whisper transcript fallback")
+        logger.info("yt-dlp is unavailable for YouTube audio transcription")
         return {"text": "", "source_duration": 0.0}
 
     if WhisperModel is None:
-        logger.info("faster-whisper is unavailable for audio transcription fallback")
+        logger.info("faster-whisper is unavailable for audio transcription")
         return {"text": "", "source_duration": 0.0}
 
     url = f"https://www.youtube.com/watch?v={video_id}"
@@ -184,7 +184,7 @@ def _fetch_transcript_with_whisper(video_id: str) -> dict:
         downloaded_path, duration_seconds = _download_audio_for_whisper(url, base_ydl_opts)
 
         if not downloaded_path or not os.path.exists(downloaded_path):
-            logger.warning("Whisper fallback did not produce an audio file")
+            logger.warning("Audio download step did not produce a usable audio file")
             return {"text": "", "source_duration": float(duration_seconds or 0)}
 
         logger.info(
@@ -226,7 +226,7 @@ def _fetch_transcript_with_whisper(video_id: str) -> dict:
             "source_duration": float(duration_seconds or 0),
         }
     except Exception as exc:
-        logger.warning("Whisper transcript fallback failed: %s", exc)
+        logger.warning("Whisper transcription failed: %s", exc)
         return {"text": "", "source_duration": 0.0}
     finally:
         _cleanup_temp_dir(temp_dir)
@@ -372,7 +372,7 @@ def _probe_media_duration_seconds(media_path: str) -> float:
 def generate_mock_transcript() -> str:
     """
     Generate mock transcript untuk demo purposes
-    Digunakan ketika YouTube tidak bisa ambil transcript
+    Digunakan ketika pipeline audio transcription gagal
     """
     return (
         "Dalam era digital ini, teknologi AI telah mengubah cara kita bekerja dan berkarya. "

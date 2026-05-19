@@ -134,8 +134,8 @@ async def health_check():
 async def analyze(request: AnalyzeRequest):
     """
     Endpoint untuk menganalisis video YouTube:
-    1. Fetch transcript dari YouTube
-    2. Kirim ke Gemini API
+    1. Download audio dan transkripsi dengan Whisper
+    2. Kirim transcript ke Gemini API
     3. Return JSON dengan array of clips dan transcript
     """
     logger.info(f"Analyzing URL: {request.url}")
@@ -146,7 +146,7 @@ async def analyze(request: AnalyzeRequest):
         analysis_cache_hit = False
 
         # Step 1: Get transcript
-        logger.info("Fetching transcript...")
+        logger.info("Generating transcript from video audio...")
         transcript_result = _get_cached_transcript(video_id)
         if transcript_result:
             transcript_cache_hit = True
@@ -160,10 +160,10 @@ async def analyze(request: AnalyzeRequest):
         if transcript_result["source"] == "mock":
             raise HTTPException(
                 status_code=400,
-                detail=transcript_result.get("error_reason") or "Transcript tidak tersedia. Video ini tidak memiliki subtitle atau tidak dapat di-fetch dari YouTube."
+                detail=transcript_result.get("error_reason") or "Transcript could not be generated from the video audio. Please try another video or use Analyze Local."
             )
         if not transcript:
-            raise HTTPException(status_code=400, detail="Tidak bisa ambil transcript dari video ini")
+            raise HTTPException(status_code=400, detail="Transcript could not be generated from this video.")
         
         # Step 2: AI Analysis dengan Gemini API
         logger.info(f"Running AI analysis dengan mode: {request.mode}")

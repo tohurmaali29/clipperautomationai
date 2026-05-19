@@ -30,7 +30,14 @@ let previewSeekTimeout = null;
 const trackedSeekVideos = new WeakSet();
 let draggedSubtitleRow = null;
 let slowProcessTimer = null;
+let slowProcessInterval = null;
 const HISTORY_STORAGE_KEY = 'ai_video_clipper_history_v1';
+const SLOW_PROCESS_MESSAGES = [
+    'Loading is still in progress. We are processing your video.',
+    'Audio is being transcribed with Whisper. This can take longer for bigger videos.',
+    'AI analysis is still running. Please keep this page open.',
+    'We are still working on your request. Thank you for waiting.'
+];
 
 document.addEventListener('DOMContentLoaded', () => {
     const statusDiv = document.getElementById('status');
@@ -142,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        statusDiv.textContent = 'Analyzing transcript and preparing AI insights...';
+        statusDiv.textContent = 'Transcribing video audio and preparing AI insights...';
         if (statusTitle) statusTitle.textContent = 'Analyzing your video...';
         selected.currentUrl = url;
         selected.currentSourceType = 'youtube';
@@ -159,8 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selected.activeClipKey = '';
         resetGeneratedClips();
         hideGeneratedPage();
-        setProcessingState(true, 'Getting transcript, extracting timing, and preparing AI insights.');
-        setProcessingProgress(14, 'Getting transcript, extracting timing, and preparing AI insights.');
+        setProcessingState(true, 'Transcribing video audio, extracting timing, and preparing AI insights.');
+        setProcessingProgress(14, 'Transcribing video audio, extracting timing, and preparing AI insights.');
         setBadge(transcriptBadge, 'Transcript Loading', false);
         setBadge(analysisBadge, 'AI Loading', false);
         setBadge(modeBadge, 'Processing', false);
@@ -176,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const detail = data.detail || data.error || 'Analyze failed';
+                setProcessingState(false);
                 statusDiv.textContent = `Error: ${detail} If YouTube access is blocked, try Analyze Local with your own file.`;
                 if (statusTitle) statusTitle.textContent = 'Analyze failed';
                 setBadge(transcriptBadge, 'Transcript Failed', false);
@@ -669,20 +677,40 @@ function setProcessingState(isProcessing, message = '') {
         if (slowProcessTimer) {
             clearTimeout(slowProcessTimer);
         }
+        if (slowProcessInterval) {
+            clearInterval(slowProcessInterval);
+            slowProcessInterval = null;
+        }
         slowProcessTimer = window.setTimeout(() => {
             const statusDiv = document.getElementById('status');
             const statusTitle = document.getElementById('status-title');
             if (statusDiv) {
-                statusDiv.textContent = 'This process may take a few minutes, especially for longer videos or subtitle rendering.';
+                statusDiv.textContent = SLOW_PROCESS_MESSAGES[0];
             }
             if (statusTitle) {
                 statusTitle.textContent = 'Process is still running...';
             }
-        }, 9000);
+            let messageIndex = 1;
+            slowProcessInterval = window.setInterval(() => {
+                const liveStatusDiv = document.getElementById('status');
+                const liveStatusTitle = document.getElementById('status-title');
+                if (liveStatusDiv) {
+                    liveStatusDiv.textContent = SLOW_PROCESS_MESSAGES[messageIndex % SLOW_PROCESS_MESSAGES.length];
+                }
+                if (liveStatusTitle) {
+                    liveStatusTitle.textContent = 'Process is still running...';
+                }
+                messageIndex += 1;
+            }, 20000);
+        }, 120000);
     } else {
         if (slowProcessTimer) {
             clearTimeout(slowProcessTimer);
             slowProcessTimer = null;
+        }
+        if (slowProcessInterval) {
+            clearInterval(slowProcessInterval);
+            slowProcessInterval = null;
         }
         statusShell?.classList.remove('is-processing');
         processingRing?.classList.remove('is-active');
