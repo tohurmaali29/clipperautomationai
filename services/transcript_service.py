@@ -24,6 +24,8 @@ except Exception:  # pragma: no cover - environment dependent
     WhisperModel = None
 
 logger = logging.getLogger(__name__)
+_WHISPER_MODEL_INSTANCE = None
+_WHISPER_MODEL_SIGNATURE = None
 
 FFMPEG_CMD = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ffmpeg.exe")
 if not os.path.exists(FFMPEG_CMD):
@@ -193,11 +195,7 @@ def _fetch_transcript_with_whisper(video_id: str) -> dict:
             Config.WHISPER_DEVICE,
             Config.WHISPER_COMPUTE_TYPE,
         )
-        model = WhisperModel(
-            Config.WHISPER_MODEL,
-            device=Config.WHISPER_DEVICE,
-            compute_type=Config.WHISPER_COMPUTE_TYPE,
-        )
+        model = _get_whisper_model()
 
         chunk_paths = _prepare_whisper_chunks(
             downloaded_path,
@@ -330,6 +328,33 @@ def _build_transcript_result(
     }
 
 
+def _get_whisper_model():
+    """Reuse a single WhisperModel instance per process to reduce repeated memory spikes."""
+    global _WHISPER_MODEL_INSTANCE, _WHISPER_MODEL_SIGNATURE
+
+    signature = (
+        Config.WHISPER_MODEL,
+        Config.WHISPER_DEVICE,
+        Config.WHISPER_COMPUTE_TYPE,
+    )
+    if _WHISPER_MODEL_INSTANCE is not None and _WHISPER_MODEL_SIGNATURE == signature:
+        return _WHISPER_MODEL_INSTANCE
+
+    logger.info(
+        "Loading Whisper model=%s device=%s compute_type=%s",
+        Config.WHISPER_MODEL,
+        Config.WHISPER_DEVICE,
+        Config.WHISPER_COMPUTE_TYPE,
+    )
+    _WHISPER_MODEL_INSTANCE = WhisperModel(
+        Config.WHISPER_MODEL,
+        device=Config.WHISPER_DEVICE,
+        compute_type=Config.WHISPER_COMPUTE_TYPE,
+    )
+    _WHISPER_MODEL_SIGNATURE = signature
+    return _WHISPER_MODEL_INSTANCE
+
+
 def _cleanup_temp_dir(path: str) -> None:
     """Best-effort cleanup for temporary transcript assets."""
     if not path or not os.path.exists(path):
@@ -449,26 +474,34 @@ async def transcribe_audio_file_async(audio_file_path: str) -> dict:
     try:
         logger.info(f"Transcribing audio file: {audio_file_path}")
         
-        # Load Whisper model
-        model = WhisperModel(
-            Config.WHISPER_MODEL,
-            device=Config.WHISPER_DEVICE,
-            compute_type=Config.WHISPER_COMPUTE_TYPE,
-        )
-        
-        # Transcribe audio
-        segments, info = model.transcribe(
+        duration_seconds = _probe_media_duration_seconds(audio_file_path)
+        temp_dir = tempfile.mkdtemp(prefix="upload_audio_")
+        model = _get_whisper_model()
+
+        chunk_paths = _prepare_whisper_chunks(
             audio_file_path,
-            beam_size=1,
-            vad_filter=True,
-            condition_on_previous_text=False,
+            duration_seconds,
+            temp_dir,
         )
-        
-        # Combine all segments
+        if not chunk_paths:
+            chunk_paths = [audio_file_path]
+
         transcript_parts = []
-        for segment in segments:
-            if segment.text.strip():
-                transcript_parts.append(segment.text.strip())
+        info = None
+        try:
+            for index, chunk_path in enumerate(chunk_paths, start=1):
+                logger.info("Transcribing upload chunk %s/%s", index, len(chunk_paths))
+                segments, info = model.transcribe(
+                    chunk_path,
+                    beam_size=1,
+                    vad_filter=True,
+                    condition_on_previous_text=False,
+                )
+                for segment in segments:
+                    if segment.text.strip():
+                        transcript_parts.append(segment.text.strip())
+        finally:
+            _cleanup_temp_dir(temp_dir)
         
         text = " ".join(transcript_parts).strip()
         
@@ -485,9 +518,9 @@ async def transcribe_audio_file_async(audio_file_path: str) -> dict:
             "text": text,
             "source": "whisper_upload",
             "used_fallback": False,
-            "language": info.language,
-            "language_probability": info.language_probability,
-            "source_duration": _probe_media_duration_seconds(audio_file_path),
+            "language": getattr(info, "language", None),
+            "language_probability": getattr(info, "language_probability", None),
+            "source_duration": duration_seconds,
         }
         
     except Exception as e:

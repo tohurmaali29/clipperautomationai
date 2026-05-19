@@ -9,10 +9,10 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY')
-    WHISPER_MODEL = os.environ.get('WHISPER_MODEL', 'small')
+    WHISPER_MODEL = os.environ.get('WHISPER_MODEL', 'tiny')
     WHISPER_DEVICE = os.environ.get('WHISPER_DEVICE', 'cpu')
     WHISPER_COMPUTE_TYPE = os.environ.get('WHISPER_COMPUTE_TYPE', 'int8')
-    WHISPER_MAX_AUDIO_SECONDS = int(os.environ.get('WHISPER_MAX_AUDIO_SECONDS', '900'))
+    WHISPER_MAX_AUDIO_SECONDS = int(os.environ.get('WHISPER_MAX_AUDIO_SECONDS', '300'))
     WHISPER_CHUNK_SECONDS = int(os.environ.get('WHISPER_CHUNK_SECONDS', '180'))
     
     # GCP Configuration
