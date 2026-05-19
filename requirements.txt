@@ -8,3 +8,5 @@ requests==2.31.0
 pydantic==2.5.0
 yt-dlp==2026.3.29.233709.dev0
 faster-whisper>=1.1.0,<2.0.0
+Jinja2==3.1.4
+python-multipart==0.0.9

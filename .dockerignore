@@ -1,0 +1,14 @@
+.git
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+uploads/
+.env
+ffmpeg.exe
+ffprobe.exe
+test_output.mp4
+test_subtitle.ass
